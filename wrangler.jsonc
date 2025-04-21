@@ -1,0 +1,13 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+ {
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "portrait-app",
+	"compatibility_date": "2025-03-27",
+	"pages_build_output_dir": "./dist",
+	"observability": {
+		"enabled": true
+	}
+}
