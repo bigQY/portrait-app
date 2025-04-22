@@ -1,6 +1,24 @@
-# Nuxt Minimal Starter
+# Portrait Album 相册应用
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+一个基于 Nuxt.js 开发的在线相册应用，支持图片浏览和相册管理。
+
+## 在线演示
+
+访问 [https://img.zzdx.eu.org/](https://img.zzdx.eu.org/) 查看演示效果
+
+## 主要功能
+
+- 🖼️ 相册浏览与管理
+- 📱 响应式设计，支持移动端访问
+- 🚀 图片缓存优化
+- ⚡ 基于 Alist 的文件系统集成
+
+## 技术栈
+
+- Nuxt.js 3
+- Vue 3
+- Alist API 集成
+- Cloudflare Workers（用于边缘计算）
 
 ## Setup
 
