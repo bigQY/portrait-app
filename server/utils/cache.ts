@@ -6,7 +6,7 @@ interface CacheItem<T> {
 export class Cache {
   private static instance: Cache;
   private cache: Map<string, CacheItem<any>>;
-  private readonly defaultTTL: number = 50 * 60 * 1000; // 默认5分钟缓存
+  private readonly defaultTTL: number = 30 * 1000;
 
   private constructor() {
     this.cache = new Map();
@@ -20,6 +20,10 @@ export class Cache {
   }
 
   set(key: string, value: any, ttl: number = this.defaultTTL): void {
+    return;
+    if (ttl > this.defaultTTL) {
+      ttl = this.defaultTTL;
+    }
     this.cache.set(key, {
       value,
       timestamp: Date.now() + ttl
@@ -27,6 +31,7 @@ export class Cache {
   }
 
   get<T>(key: string): T | null {
+    return null;
     const item = this.cache.get(key);
     if (!item) return null;
     

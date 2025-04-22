@@ -3,7 +3,7 @@ import { cache } from '~/server/utils/cache'
 
 const DEFAULT_PAGE_SIZE = 10
 const CACHE_KEY_PREFIX = 'albums_list'
-const CACHE_TTL = 10 * 60 * 1000 // 10分钟缓存
+const CACHE_TTL = 1 * 60 * 1000 // 10分钟缓存
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     await alistClient.login()
     
     // 获取写真图床目录下的所有相册目录
-    const basePath = '/img/写真图床'
+    const basePath = '/cmcc/图床相册'
     const dirsResponse = await alistClient.getFiles(basePath)
     const allDirs = dirsResponse.content.filter(dir => dir.is_dir)
     
@@ -36,21 +36,14 @@ export default defineEventHandler(async (event) => {
       const albumPromises = currentPageDirs.map(async dir => {
         const id = dir.name
         try {
-          // 继续向下遍历
-          const subDirs = (await alistClient.getFiles(`${basePath}/${dir.name}`)).content
-          const subDir = subDirs.find(subDir => subDir.is_dir)
-          if (!subDir) {
-            return null
-          }
-          
-          const subDirPath = `${basePath}/${dir.name}/${subDir.name}`
-          const subDirFiles = (await alistClient.getFiles(subDirPath)).content
-          const photos = subDirFiles.filter(file => !file.is_dir)
-          const cover = subDirFiles.find(file => !file.is_dir)?.thumb || null
+          const urlDirName = `/cmcc/${encodeURIComponent('图床相册')}/${encodeURIComponent(dir.name)}`
+          const subDirFiles = (await alistClient.getFiles(`/cmcc/图床相册/${dir.name}`)).content
+          const photos = subDirFiles.filter(file => !file.is_dir && file.type ===5)
+          const cover = subDirFiles.find(file => !file.is_dir && file.thumb)?.thumb || null
 
           return {
             id,
-            name: subDir.name,
+            name: dir.name,
             cover,
             photos,
           }

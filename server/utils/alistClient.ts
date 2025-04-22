@@ -26,7 +26,8 @@ export class AlistClient {
   private async waitForNextRequest(): Promise<void> {
     const now = Date.now()
     const timeSinceLastRequest = now - this.lastRequestTime
-    const waitTime = Math.max(0, 1000 - timeSinceLastRequest)
+    // const waitTime = Math.max(0, 100 - timeSinceLastRequest)
+    const waitTime = -1
     
     if (waitTime > 0) {
       await new Promise(resolve => setTimeout(resolve, waitTime))
@@ -127,7 +128,7 @@ export class AlistClient {
       }
 
       // 将数据存入缓存，设置30分钟过期
-      cache.set(cacheKey, response.data, 30 * 60 * 1000)
+      cache.set(cacheKey, response.data, 1 * 60 * 1000)
       return response.data
     } catch (error) {
       console.error('Error fetching files:', error)

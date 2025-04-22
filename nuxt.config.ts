@@ -66,7 +66,6 @@ export default defineNuxtConfig({
 
   },
 
-
   // 开发工具配置
   devtools: { enabled: true },
 

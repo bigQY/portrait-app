@@ -1,4 +1,5 @@
 <template>
+    <UApp>
   <div class="min-h-screen">
     <!-- 导航栏 -->
     <header class="sticky top-0 z-40 w-full backdrop-blur flex-none transition-colors duration-300 border-b border-gray-900/10 dark:border-gray-50/[0.06] bg-white/75 dark:bg-gray-900/75">
@@ -26,12 +27,28 @@
     <!-- 主体内容 -->
     <NuxtPage />
   </div>
+</UApp>
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
+
 const colorMode = useColorMode()
 
 const toggleColorMode = () => {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
+
+onMounted(() => {
+  // 注册Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch(error => {
+        console.error('Service Worker registration failed:', error);
+      });
+  }
+});
 </script>
