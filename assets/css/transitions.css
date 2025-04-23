@@ -18,3 +18,40 @@
 .fade-leave-to {
   opacity: 0;
 }
+
+/* 重置动画状态 */
+.reset-animation {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: all 0.3s ease-out;
+}
+
+/* 确保返回时动画状态被清除 */
+.page-enter-active .fade-out {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

@@ -32,7 +32,11 @@ export default defineNuxtConfig({
         { name: 'description', content: '精美写真相册展示' }
       ]
     },
-    pageTransition: { name: 'page', mode: 'out-in' }
+    pageTransition: {
+      name: 'page',
+      mode: 'out-in',
+    },
+    keepalive: true
   },
 
   // 图片优化配置
@@ -63,7 +67,10 @@ export default defineNuxtConfig({
       deployConfig: true,
       nodeCompat: true
     },
-
+    routeRules: {
+      '/': { prerender: true },
+      '/album/**': { swr: true }
+    }
   },
 
   // 开发工具配置

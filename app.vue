@@ -25,13 +25,16 @@
     </header>
 
     <!-- 主体内容 -->
-    <NuxtPage />
+    <NuxtPage :transition="{
+      name: 'page',
+      mode: 'out-in'
+    }" />
   </div>
 </UApp>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+const isClient = import.meta.client
 
 const colorMode = useColorMode()
 
@@ -39,16 +42,35 @@ const toggleColorMode = () => {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
 
-onMounted(() => {
-  // 注册Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.log('Service Worker registered with scope:', registration.scope);
-      })
-      .catch(error => {
-        console.error('Service Worker registration failed:', error);
-      });
-  }
-});
+// 确保 Service Worker 注册只在客户端执行
+if (import.meta.client) {
+  onMounted(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(registration => {
+          console.log('Service Worker registered with scope:', registration.scope);
+        })
+        .catch(error => {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
+  });
+}
 </script>
+
+<style>
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.25s ease-out;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+</style>

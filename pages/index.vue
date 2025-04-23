@@ -2,27 +2,52 @@
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <UContainer>
       <div class="py-8">
+        <!-- 加载状态 -->
+        <div v-if="pending" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div v-for="i in 10" :key="i" class="relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+            <div class="skeleton z-10 absolute inset-0"></div>
+          </div>
+        </div>
+
         <!-- 相册网格 -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <div v-for="album in albums" :key="album.id" class="group">
-            <NuxtLink :to="`/album/${album.id}`" class="block">
+            <NuxtLink :to="`/album/${album.id}`" class="block" @click.native.prevent="async (e) => {
+              const container = e.currentTarget.closest('.group')
+              if (container) {
+                container.classList.add('fade-out')
+              }
+              navigateTo(`/album/${album.id}`)
+            }">
               <div class="relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                <div v-if="!imageLoaded[album.id]" class="skeleton z-10"></div>
                 <img
                   v-if="album.photos?.length > 0"
                   :src="album.cover"
                   :data-src="`https://alist.zzdx.eu.org/d/cmcc/${encodeURIComponent('图床相册')}/${encodeURIComponent(album.name)}/${encodeURIComponent(album.photos[0].name)}`"
-                  class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                  :class="[
+                    'object-cover w-full h-full transition-transform duration-300',
+                    {'group-hover:scale-105': imageLoaded[album.id]}
+                  ]"
                   @error="$event.target.src = '/img/cover.jpg'"
+                  @load="imageLoaded[album.id] = true"
                   ref="lazyImages"
                 />
                 <img
                   v-else
                   src="/img/cover.jpg"
-                  class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                  :class="[
+                    'object-cover w-full h-full transition-transform duration-300',
+                    {'group-hover:scale-105': imageLoaded[album.id]}
+                  ]"
+                  @load="imageLoaded[album.id] = true"
                 />
                 
                 <!-- 相册信息悬浮层 -->
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div :class="[
+                  'absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300',
+                  {'group-hover:opacity-100': imageLoaded[album.id]}
+                ]">
                   <div class="absolute bottom-0 left-0 right-0 p-4">
                     <h3 class="text-white text-sm font-medium truncate">{{ album.name }}</h3>
                     <p class="text-gray-200 text-xs mt-1">{{ album.photos?.length || 0 }} 张照片</p>
@@ -33,87 +58,180 @@
           </div>
         </div>
 
-        <!-- 加载更多指示器 -->
-        <div 
-          ref="loadMoreTrigger" 
-          class="mt-8 py-4 flex justify-center"
-          v-if="hasNextPage"
-        >
-          <UIcon 
-            name="i-lucide-loader-2" 
-            class="w-6 h-6 text-gray-400 animate-spin"
-          />
+        <!-- 分页器 -->
+        <div class="mt-8 flex justify-center items-center space-x-2">
+          <UButton
+            :disabled="currentPage === 1"
+            @click="changePage(currentPage - 1)"
+            class="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
+            variant="ghost"
+          >
+            <UIcon name="i-lucide-chevron-left" class="w-5 h-5" />
+          </UButton>
+          
+          <div class="flex space-x-1">
+            <template v-for="page in displayPages" :key="page">
+              <UButton
+                v-if="page !== '...'"
+                :variant="page === currentPage ? 'soft' : 'ghost'"
+                @click="changePage(page)"
+                class="w-10 h-10 flex items-center justify-center text-gray-700 dark:text-gray-200 transition-all duration-300"
+                :class="{
+                  'bg-gray-100 dark:bg-gray-800 font-medium': page === currentPage
+                }"
+              >
+                {{ page }}
+              </UButton>
+              <span v-else class="w-10 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400">...</span>
+            </template>
+          </div>
+
+          <UButton
+            :disabled="currentPage === totalPages"
+            @click="changePage(currentPage + 1)"
+            class="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
+            variant="ghost"
+          >
+            <UIcon name="i-lucide-chevron-right" class="w-5 h-5" />
+          </UButton>
         </div>
       </div>
     </UContainer>
   </div>
 </template>
 
+<style>
+.fade-out {
+  opacity: 0.6;
+  transform: scale(0.98);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(0.98);
+  }
+}
+
+.fade-in {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.3s ease-in-out;
+}
+
+.skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(90deg, #2d3748 25%, #1a202c 50%, #2d3748 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+</style>
+
 <script setup>
 const currentPage = ref(1)
 const pageSize = ref(10)
-const allAlbums = ref([])
-const hasNextPage = ref(true)
-const loadMoreTrigger = ref(null)
+const totalPages = ref(1)
+const imageLoaded = ref({})
 
 // 获取相册列表数据
-const { data: albumsData, pending, refresh } = await useFetch('/api/alist/albums', {
+const { data: albumsData, pending } = await useFetch('/api/alist/albums', {
   query: computed(() => ({
     page: currentPage.value,
     pageSize: pageSize.value
-  }))
+  })),
+  watch: [currentPage]
 })
 
-// 监听数据变化，合并数据
-watch(albumsData, (newData) => {
-  if (newData?.data?.items) {
-    if (currentPage.value === 1) {
-      allAlbums.value = []
-    }
-    allAlbums.value.push(...newData.data.items)
-    hasNextPage.value = currentPage.value < (newData.data.pagination?.totalPages || 1)
+// 计算要显示的页码
+const displayPages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const delta = 2 // 当前页码前后显示的页数
+  const pages = []
 
-    // 在客户端环境中初始化图片懒加载
-    if (import.meta.client) {
-      nextTick(() => {
-        initializeImageObserver()
-      })
-    }
-    
-    // 在数据更新后，等待DOM更新完成再初始化新图片的观察器
+  // 始终显示第一页
+  pages.push(1)
+
+  // 计算显示范围
+  let left = Math.max(2, current - delta)
+  let right = Math.min(total - 1, current + delta)
+
+  // 添加省略号和页码
+  if (left > 2) pages.push('...')
+  for (let i = left; i <= right; i++) pages.push(i)
+  if (right < total - 1) pages.push('...')
+  if (total > 1) pages.push(total)
+
+  return pages
+})
+
+// 监听数据变化
+watch(albumsData, (newData) => {
+  if (newData?.data) {
+    totalPages.value = newData.data.pagination?.totalPages || 1
+  }
+
+  // 在数据更新后，等待DOM更新完成再初始化新图片的观察器
+  if (import.meta.client) {
     nextTick(() => {
       initializeImageObserver()
     })
   }
 }, { immediate: true })
 
-// 相册数据
-const albums = computed(() => allAlbums.value)
-
-// 设置无限滚动
-onMounted(() => {
-  const observer = new IntersectionObserver(async ([entry]) => {
-    if (entry.isIntersecting && hasNextPage.value && !pending.value) {
-      currentPage.value++
-      await refresh()
-    }
-  }, {
-    rootMargin: '100px'
-  })
-
-  if (loadMoreTrigger.value) {
-    observer.observe(loadMoreTrigger.value)
+// 切换页面的方法
+const changePage = async (page) => {
+  if (page === currentPage.value || page < 1 || page > totalPages.value) return
+  
+  // 重置所有图片的加载状态
+  imageLoaded.value = {}
+  
+  // 添加页面切换动画类
+  const container = document.querySelector('.grid')
+  if (container) {
+    container.classList.add('fade-out')
+    await new Promise(resolve => setTimeout(resolve, 300))
   }
 
-  onUnmounted(() => {
-    observer.disconnect()
-  })
-})
+  currentPage.value = page
+  
+  // 恢复动画类
+  if (container) {
+    container.classList.remove('fade-out')
+    container.classList.add('fade-in')
+    setTimeout(() => container.classList.remove('fade-in'), 300)
+  }
+}
 
-// 图片缓存和懒加载
+// 相册数据
+const albums = computed(() => albumsData.value?.data?.items || [])
+
+// 图片懒加载
 const lazyImages = ref([])
-const loadedThumbnails = ref(new Set())
-const loadingFullImages = ref(new Set())
 const imageObserver = ref(null)
 
 // 导入缓存管理器
@@ -162,15 +280,11 @@ const initializeImageObserver = () => {
             const cachedImage = await cache.getImage(cacheKey)
             if (cachedImage) {
               img.src = cachedImage
-              loadedThumbnails.value.add(img)
-              checkAndLoadFullImages()
             } else {
               // 从网络加载并缓存
               const base64Data = await convertImageToBase64(originalUrl)
               await cache.saveImage(cacheKey, base64Data)
               img.src = base64Data
-              loadedThumbnails.value.add(img)
-              checkAndLoadFullImages()
             }
           } catch (error) {
             console.error('图片加载失败:', error)
@@ -187,40 +301,8 @@ const initializeImageObserver = () => {
 
   // 监听所有图片
   lazyImages.value.forEach(img => {
-    if (img && !loadedThumbnails.value.has(img)) {
+    if (img) {
       imageObserver.value.observe(img)
-    }
-  })
-}
-
-// 加载大图
-const loadFullImage = async (originalUrl) => {
-  if (loadingFullImages.value.has(originalUrl)) return
-  
-  loadingFullImages.value.add(originalUrl)
-  try {
-    const cache = getCache()
-    const urlParts = originalUrl.split('/cmcc/')
-    const cacheKey = urlParts[1]
-    
-    const cachedImage = await cache.getImage(cacheKey)
-    if (!cachedImage) {
-      const base64Data = await convertImageToBase64(originalUrl)
-      await cache.saveImage(cacheKey, base64Data)
-    }
-  } catch (error) {
-    console.error('大图加载失败:', error)
-  } finally {
-    loadingFullImages.value.delete(originalUrl)
-  }
-}
-
-// 检查并开始加载大图
-const checkAndLoadFullImages = () => {
-  lazyImages.value.forEach(img => {
-    const originalUrl = img.dataset.src
-    if (originalUrl && loadedThumbnails.value.has(img) && !loadingFullImages.value.has(originalUrl)) {
-      loadFullImage(originalUrl)
     }
   })
 }
@@ -234,8 +316,6 @@ onMounted(() => {
     if (imageObserver.value) {
       imageObserver.value.disconnect()
     }
-    loadedThumbnails.value.clear()
-    loadingFullImages.value.clear()
   })
 })
 </script>

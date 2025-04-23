@@ -13,48 +13,15 @@ export class AlistClient {
   private token: string | null = null
   private username: string
   private password: string
-  private lastRequestTime: number = 0
-  private requestQueue: Array<() => void> = []
-  private isProcessing: boolean = false
-
+  private loginAttempts: number = 0
+  private readonly maxLoginAttempts: number = 3
   private constructor(baseURL: string = 'https://alist.zzdx.eu.org', username = 'guest', password = 'guest') {
     this.baseURL = baseURL.replace(/\/$/, '')
     this.username = username
     this.password = password
   }
 
-  private async waitForNextRequest(): Promise<void> {
-    const now = Date.now()
-    const timeSinceLastRequest = now - this.lastRequestTime
-    // const waitTime = Math.max(0, 100 - timeSinceLastRequest)
-    const waitTime = -1
-    
-    if (waitTime > 0) {
-      await new Promise(resolve => setTimeout(resolve, waitTime))
-    }
-  }
 
-  private async processQueue() {
-    if (this.isProcessing || this.requestQueue.length === 0) return
-    
-    this.isProcessing = true
-    
-    while (this.requestQueue.length > 0) {
-      const nextRequest = this.requestQueue.shift()!
-      await this.waitForNextRequest()
-      this.lastRequestTime = Date.now()
-      nextRequest()
-    }
-    
-    this.isProcessing = false
-  }
-
-  private async requestWithRateLimit(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      this.requestQueue.push(resolve)
-      this.processQueue()
-    })
-  }
 
   public static getInstance(baseURL?: string, username = 'guest', password = 'guest'): AlistClient {
     if (!AlistClient.instance) {
@@ -84,19 +51,31 @@ export class AlistClient {
     if (await this.checkToken()) {
       return
     }
-    
-    const response = await $fetch<AlistResponse<{ token: string }>>('/api/auth/login', {
-      method: 'POST',
-      baseURL: this.baseURL,
-      body: {
-        username: this.username,
-        password: this.password
-      }
-    })
-    if (response.code !== 200) {
-      throw new Error(response.message)
+
+    if (this.loginAttempts >= this.maxLoginAttempts) {
+      throw new Error('登录失败次数过多，请检查用户名和密码是否正确')
     }
-    this.token = response.data.token
+    
+    try {
+      const response = await $fetch<AlistResponse<{ token: string }>>('/api/auth/login', {
+        method: 'POST',
+        baseURL: this.baseURL,
+        body: {
+          username: this.username,
+          password: this.password
+        }
+      })
+      if (response.code !== 200) {
+        this.loginAttempts++
+        throw new Error(`登录失败：${response.message}`)
+      }
+      // 登录成功，重置计数器
+      this.loginAttempts = 0
+      this.token = response.data.token
+    } catch (error) {
+      this.loginAttempts++
+      throw error
+    }
   }
 
   public async getFiles(path: string): Promise<any[]> {
@@ -108,8 +87,7 @@ export class AlistClient {
       return cachedData
     }
 
-    // 等待请求限制
-    await this.requestWithRateLimit()
+
     
     try {
       const response = await $fetch<AlistResponse<any[]>>('/api/fs/list', {
@@ -124,6 +102,16 @@ export class AlistClient {
       })
       
       if (response.code !== 200) {
+        // 401 表示未登录，尝试登录
+        if (response.code === 401) {
+          try {
+            await this.login()
+            // 重新发起请求
+            return this.getFiles(path)
+          } catch (error) {
+            throw new Error(`获取文件列表失败：${error.message}`)
+          }
+        }
         throw new Error(response.message)
       }
 
