@@ -73,4 +73,8 @@ if (import.meta.client) {
   opacity: 0;
   transform: translateX(-20px);
 }
+
+body {
+  overflow-x: hidden;
+}
 </style>

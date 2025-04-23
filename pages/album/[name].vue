@@ -4,7 +4,14 @@
       <!-- 相册标题栏 -->
       <div class="py-6 flex items-center gap-4">
         <button 
-          @click="handleReturn"
+          @click="async () => {
+            await navigateTo('/')
+            // 等待DOM更新后清除动画类
+            nextTick(() => {
+              const elements = document.querySelectorAll('.fade-out')
+              elements.forEach(el => el.classList.remove('fade-out'))
+            })
+          }"
           class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors duration-200"
         >
           <UIcon name="i-lucide-chevron-left" class="w-6 h-6 text-gray-600 dark:text-gray-400"/>
@@ -173,11 +180,31 @@ const convertImageToBase64 = (url) => {
 
 // 初始化IntersectionObserver
 onMounted(async () => {
-  observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+  observer = new IntersectionObserver(async (entries) => {
+    entries.forEach(async entry => {
       if (entry.isIntersecting) {
         const img = entry.target
-        if (img.dataset.src) {
+        const originalUrl = img.dataset.src
+        if (originalUrl) {
+          try {
+            // 生成缓存key
+            const urlParts = originalUrl.split('/cmcc/')
+            const cacheKey = urlParts[1] // 使用相对路径作为key
+            
+            // 尝试从缓存获取缩略图
+            const cachedImage = await imageCache.getImage(`thumb_${cacheKey}`)
+            if (cachedImage) {
+              img.src = cachedImage
+            } else {
+              // 从网络加载并缓存缩略图
+              const base64Data = await convertImageToBase64(img.src)
+              await imageCache.saveImage(`thumb_${cacheKey}`, base64Data)
+              img.src = base64Data
+            }
+          } catch (error) {
+            console.error('缩略图加载失败:', error)
+            // img.src = '/img/cover.jpg'
+          }
           observer.unobserve(img)
         }
       }

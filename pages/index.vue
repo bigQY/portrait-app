@@ -193,12 +193,15 @@ const displayPages = computed(() => {
 watch(albumsData, (newData) => {
   if (newData?.data) {
     totalPages.value = newData.data.pagination?.totalPages || 1
-  }
-
-  // 在数据更新后，等待DOM更新完成再初始化新图片的观察器
-  if (import.meta.client) {
+    
+    // 重要：确保在数据更新后重置加载状态
+    imageLoaded.value = {}
+    
+    // 在下一个 tick 初始化观察器，确保 DOM 已更新
     nextTick(() => {
-      initializeImageObserver()
+      if (import.meta.client) {
+        initializeImageObserver()
+      }
     })
   }
 }, { immediate: true })
@@ -316,6 +319,19 @@ onMounted(() => {
     if (imageObserver.value) {
       imageObserver.value.disconnect()
     }
+  })
+  // 移除页面切换动画类
+  nextTick(() => {
+    const elements = document.querySelectorAll('.fade-out')
+    elements.forEach(el => el.classList.remove('fade-out'))
+  })
+})
+
+onUpdated(() => {
+  // 移除页面切换动画类
+  nextTick(() => {
+    const elements = document.querySelectorAll('.fade-out')
+    elements.forEach(el => el.classList.remove('fade-out'))
   })
 })
 </script>

@@ -39,13 +39,18 @@ export default defineEventHandler(async (event) => {
           const urlDirName = `/cmcc/${encodeURIComponent('图床相册')}/${encodeURIComponent(dir.name)}`
           const subDirFiles = (await alistClient.getFiles(`/cmcc/图床相册/${dir.name}`)).content
           const photos = subDirFiles.filter(file => !file.is_dir && file.type ===5)
-          const cover = subDirFiles.find(file => !file.is_dir && file.thumb)?.thumb || null
+          // 如果相册为空，使用默认封面
+          const cover = photos.length > 0
+            ? (subDirFiles.find(file => !file.is_dir && file.thumb)?.thumb || null)
+            : null
 
           return {
             id,
             name: dir.name,
             cover,
             photos,
+            photoCount: photos.length,
+            isEmpty: photos.length === 0,
           }
         } catch (error) {
           console.error(`Error processing album ${dir.name}:`, error)
