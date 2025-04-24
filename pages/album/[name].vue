@@ -116,24 +116,34 @@
           <UIcon name="i-lucide-download" class="w-5 h-5"/>
           <span>下载原图</span>
         </button>
-
+      </div>
         <!-- 底部预览图 -->
-        <div class="z-30 fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-2 px-4 py-2 bg-black/50 rounded-full transition-opacity duration-300" :class="{'opacity-0': !showControls}">
+        <div class="absolute z-30 fixed bottom-0 left-0 right-0 bg-black/50 transition-opacity duration-300 overflow-hidden pb-4" :class="{'opacity-0': !showControls}">
           <div 
-            v-for="(image, index) in previewImages" 
-            :key="image.name"
-            @click="openImageViewer(image)"
-            class="w-12 h-12 rounded overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-110"
-            :class="{'ring-2 ring-white': image.name === currentImage.name}"
+            class="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar w-full max-w-screen-2xl mx-auto" 
+            style="scroll-behavior: smooth;"
+            @wheel.prevent="handleMouseWheel"
+            @mousedown="handleDragStart"
+            @mousemove="handleDragMove"
+            @mouseup="handleDragEnd"
+            @mouseleave="handleDragEnd"
+            ref="previewContainer"
           >
-            <img 
-              :src="image.thumb" 
-              :alt="image.name"
-              class="w-full h-full object-cover"
-            />
+            <div 
+              v-for="(image, index) in albumData.data.items" 
+              :key="image.name"
+              @click="openImageViewer(image)"
+              class="flex-shrink-0 w-12 h-12 rounded overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-110"
+              :class="{'ring-2 ring-white': image.name === currentImage.name}"
+            >
+              <img 
+                :src="image.thumb" 
+                :alt="image.name"
+                class="w-full h-full object-cover"
+              />
+            </div>
           </div>
         </div>
-      </div>
     </div>
   </div>
 </template>
@@ -277,13 +287,63 @@ const toggleControls = () => {
   showControls.value = !showControls.value
 }
 
-// 获取前后5张图片作为预览
-const previewImages = computed(() => {
-  if (!albumData.value?.data?.items) return []
-  const items = albumData.value.data.items
-  const start = Math.max(0, currentImageIndex.value - 2)
-  const end = Math.min(items.length, currentImageIndex.value + 3)
-  return items.slice(start, end)
+// 预览图容器引用
+const previewContainer = ref(null)
+
+// 拖动状态
+const isDragging = ref(false)
+const startX = ref(0)
+const scrollLeft = ref(0)
+
+// 处理鼠标滚轮事件
+const handleMouseWheel = (e) => {
+  if (previewContainer.value) {
+    previewContainer.value.scrollLeft += e.deltaY
+  }
+}
+
+// 处理拖动开始
+const handleDragStart = (e) => {
+  isDragging.value = true
+  startX.value = e.pageX - previewContainer.value.offsetLeft
+  scrollLeft.value = previewContainer.value.scrollLeft
+}
+
+// 处理拖动移动
+const handleDragMove = (e) => {
+  if (!isDragging.value) return
+  e.preventDefault()
+  const x = e.pageX - previewContainer.value.offsetLeft
+  const walk = (x - startX.value) * 2
+  previewContainer.value.scrollLeft = scrollLeft.value - walk
+}
+
+// 处理拖动结束
+const handleDragEnd = () => {
+  isDragging.value = false
+}
+
+// 监听当前图片变化，自动滚动到可视区域
+watch(currentImageIndex, () => {
+  nextTick(() => {
+    const container = previewContainer.value
+    if (!container) return
+    
+    const thumbnails = container.children
+    if (currentImageIndex.value >= 0 && currentImageIndex.value < thumbnails.length) {
+      const thumbnail = thumbnails[currentImageIndex.value]
+      const containerWidth = container.offsetWidth
+      const thumbnailLeft = thumbnail.offsetLeft
+      const thumbnailWidth = thumbnail.offsetWidth
+      
+      // 计算目标滚动位置，使当前缩略图居中
+      const targetScroll = thumbnailLeft - (containerWidth / 2) + (thumbnailWidth / 2)
+      container.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      })
+    }
+  })
 })
 
 // 下载图片
@@ -340,4 +400,16 @@ const openImageViewer = async (image) => {
 const handleReturn = () => {
   window.history.back()
 }
+
 </script>
+
+<style>
+/* 隐藏滚动条但保持可滚动 */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+</style>

@@ -152,7 +152,11 @@
 </style>
 
 <script setup>
-const currentPage = ref(1)
+const route = useRoute()
+const router = useRouter()
+
+// 从URL获取当前页码，默认为1
+const currentPage = ref(parseInt(route.query.page) || 1)
 const pageSize = ref(10)
 const totalPages = ref(1)
 const imageLoaded = ref({})
@@ -220,6 +224,8 @@ const changePage = async (page) => {
     await new Promise(resolve => setTimeout(resolve, 300))
   }
 
+  // 更新URL和页码
+  await router.push({ query: { page: page.toString() } })
   currentPage.value = page
   
   // 恢复动画类
