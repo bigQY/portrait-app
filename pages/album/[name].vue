@@ -61,7 +61,24 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 transition-all duration-300"
       @click.self="isImageViewerOpen = false"
     >
-      <div class="relative max-w-[90vw] max-h-[90vh] transition-transform duration-300" :class="{'scale-95': !imageLoaded.viewer, 'scale-100': imageLoaded.viewer}">
+      <!-- 左右切换按钮 -->
+      <button 
+        v-if="currentImageIndex > 0"
+        class="z-30 fixed left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
+        :class="{'opacity-0': !showControls}"
+        @click="openImageViewer(albumData.data.items[currentImageIndex - 1])"
+      >
+        <UIcon name="i-lucide-chevron-left" class="w-6 h-6"/>
+      </button>
+      <button 
+        v-if="currentImageIndex < albumData.data.items.length - 1"
+        class="z-30 fixed right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
+        :class="{'opacity-0': !showControls}"
+        @click="openImageViewer(albumData.data.items[currentImageIndex + 1])"
+      >
+        <UIcon name="i-lucide-chevron-right" class="w-6 h-6"/>
+      </button>
+      <div class="relative max-w-[90vw] max-h-[90vh] transition-transform duration-300" :class="{'scale-95': !imageLoaded.viewer, 'scale-100': imageLoaded.viewer}" @click="toggleControls">
         <!-- 缩略图作为背景 -->
         <img 
           :src="currentImage?.thumb" 
@@ -84,19 +101,38 @@
         </div>
         <!-- 控制按钮 -->
         <button 
-          class="z-30 absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center"
+          class="z-30 fixed top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
+          :class="{'opacity-0': !showControls}"
           @click="isImageViewerOpen = false"
         >
           <UIcon name="i-lucide-x" class="w-6 h-6"/>
         </button>
         <!-- 下载按钮 -->
         <button 
-          class="z-30 absolute bottom-4 right-4 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors duration-200 flex items-center gap-2"
+          class="z-30 fixed bottom-4 right-4 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors duration-200 flex items-center gap-2 transition-opacity duration-300"
+          :class="{'opacity-0': !showControls}"
           @click="downloadImage(currentImage)"
         >
           <UIcon name="i-lucide-download" class="w-5 h-5"/>
           <span>下载原图</span>
         </button>
+
+        <!-- 底部预览图 -->
+        <div class="z-30 fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-2 px-4 py-2 bg-black/50 rounded-full transition-opacity duration-300" :class="{'opacity-0': !showControls}">
+          <div 
+            v-for="(image, index) in previewImages" 
+            :key="image.name"
+            @click="openImageViewer(image)"
+            class="w-12 h-12 rounded overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-110"
+            :class="{'ring-2 ring-white': image.name === currentImage.name}"
+          >
+            <img 
+              :src="image.thumb" 
+              :alt="image.name"
+              class="w-full h-full object-cover"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -233,6 +269,22 @@ onUnmounted(() => {
 // 图片查看器状态
 const isImageViewerOpen = ref(false)
 const currentImage = ref(null)
+const currentImageIndex = ref(0)
+const showControls = ref(true)
+
+// 切换控制按钮显示状态
+const toggleControls = () => {
+  showControls.value = !showControls.value
+}
+
+// 获取前后5张图片作为预览
+const previewImages = computed(() => {
+  if (!albumData.value?.data?.items) return []
+  const items = albumData.value.data.items
+  const start = Math.max(0, currentImageIndex.value - 2)
+  const end = Math.min(items.length, currentImageIndex.value + 3)
+  return items.slice(start, end)
+})
 
 // 下载图片
 const downloadImage = async (image) => {
@@ -257,6 +309,8 @@ const openImageViewer = async (image) => {
   imageLoaded.value.viewer = false
   currentImage.value = image
   isImageViewerOpen.value = true
+  // 设置当前图片索引
+  currentImageIndex.value = albumData.value.data.items.findIndex(item => item.name === image.name)
 
   try {
     // 生成缓存key
