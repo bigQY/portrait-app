@@ -17,6 +17,7 @@
     "@nuxt/ui": "^3.0.2",
     "@tailwindcss/postcss": "^4.1.4",
     "@tailwindcss/vite": "^4.1.4",
+    "@vueuse/core": "^13.1.0",
     "nitro-cloudflare-dev": "^0.2.2",
     "nuxt": "^3.16.2",
     "ofetch": "^1.4.1",

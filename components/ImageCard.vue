@@ -131,7 +131,7 @@ const loadAndCacheImage = async () => {
     }
   } catch (error) {
     console.error('图片加载失败:', error)
-    imageRef.value.src = '/img/cover.jpg'
+    // imageRef.value.src = '/img/cover.jpg'
   }
 }
 

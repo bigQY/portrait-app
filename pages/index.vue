@@ -191,8 +191,13 @@ const changePage = async (page) => {
     await new Promise(resolve => setTimeout(resolve, 300))
   }
 
-  // 更新URL和页码
-  await router.push({ query: { page: page.toString() } })
+  // 更新URL和页码，保持搜索参数
+  await router.push({
+    query: {
+      ...route.query,  // 保留现有的查询参数
+      page: page.toString()
+    }
+  })
   currentPage.value = page
   
   // 恢复动画类
