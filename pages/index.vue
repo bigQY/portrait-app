@@ -24,14 +24,13 @@
                 <img
                   v-if="album.photos?.length > 0"
                   :src="album.cover"
-                  :data-src="`https://alist.zzdx.eu.org/d/cmcc/${encodeURIComponent('图床相册')}/${encodeURIComponent(album.name)}/${encodeURIComponent(album.photos[0].name)}`"
+                  loading="eager"
                   :class="[
                     'object-cover w-full h-full transition-transform duration-300',
                     {'group-hover:scale-105': imageLoaded[album.id]}
                   ]"
                   @error="$event.target.src = '/img/cover.jpg'"
                   @load="imageLoaded[album.id] = true"
-                  ref="lazyImages"
                 />
                 <img
                   v-else
@@ -159,7 +158,10 @@ const router = useRouter()
 const currentPage = ref(parseInt(route.query.page) || 1)
 const pageSize = ref(10)
 const totalPages = ref(1)
-const imageLoaded = ref({})
+// 服务端渲染时默认为true，避免显示骨架屏
+const imageLoaded = ref(import.meta.server ? new Proxy({}, {
+  get: () => true
+}) : {})
 
 // 获取相册列表数据
 const { data: albumsData, pending } = await useFetch('/api/alist/albums', {
@@ -167,7 +169,10 @@ const { data: albumsData, pending } = await useFetch('/api/alist/albums', {
     page: currentPage.value,
     pageSize: pageSize.value
   })),
-  watch: [currentPage]
+  watch: [currentPage],
+  server: true,
+  initialCache: false,
+  key: `albums-${currentPage.value}`
 })
 
 // 计算要显示的页码
@@ -239,12 +244,11 @@ const changePage = async (page) => {
 // 相册数据
 const albums = computed(() => albumsData.value?.data?.items || [])
 
-// 图片懒加载
-const lazyImages = ref([])
 const imageObserver = ref(null)
 
 // 导入缓存管理器
-const { cacheStrategy, getCache } = useImageCache()
+const { getCache } = useImageCache()
+const imageCache = getCache()
 
 // 将图片转换为base64
 const convertImageToBase64 = (url) => {
@@ -274,29 +278,28 @@ const initializeImageObserver = () => {
   }
 
   imageObserver.value = new IntersectionObserver(async (entries) => {
-    const cache = getCache()
     entries.forEach(async entry => {
       if (entry.isIntersecting) {
         const img = entry.target
-        const originalUrl = img.dataset.src
-        if (originalUrl && originalUrl !== img.src) {
+        const coverUrl = img.src
+        if (coverUrl && !coverUrl.includes('/img/cover.jpg')) {
           try {
             // 生成缓存key
-            const urlParts = originalUrl.split('/cmcc/')
+            const urlParts = coverUrl.split('/cmcc/')
             const cacheKey = urlParts[1] // 使用相对路径作为key
             
-            // 尝试从缓存获取
-            const cachedImage = await cache.getImage(cacheKey)
+            // 尝试从缓存获取缩略图
+            const cachedImage = await imageCache.getImage(`thumb_${cacheKey}`)
             if (cachedImage) {
               img.src = cachedImage
             } else {
-              // 从网络加载并缓存
-              const base64Data = await convertImageToBase64(originalUrl)
-              await cache.saveImage(cacheKey, base64Data)
+              // 从网络加载并缓存缩略图
+              const base64Data = await convertImageToBase64(coverUrl)
+              await imageCache.saveImage(`thumb_${cacheKey}`, base64Data)
               img.src = base64Data
             }
           } catch (error) {
-            console.error('图片加载失败:', error)
+            console.error('缩略图加载失败:', error)
             img.src = '/img/cover.jpg'
           }
           imageObserver.value.unobserve(img)
@@ -308,12 +311,6 @@ const initializeImageObserver = () => {
     threshold: 0.1
   })
 
-  // 监听所有图片
-  lazyImages.value.forEach(img => {
-    if (img) {
-      imageObserver.value.observe(img)
-    }
-  })
 }
 
 onMounted(() => {

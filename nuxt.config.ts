@@ -68,8 +68,8 @@ export default defineNuxtConfig({
       nodeCompat: true
     },
     routeRules: {
-      '/': { prerender: true },
-      '/album/**': { swr: true }
+      '/album/**': { swr: true },
+      '/': { ssr: false }
     }
   },
 
