@@ -2,11 +2,18 @@
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <UContainer>
       <div class="py-8">
+
         <!-- 加载状态 -->
         <div v-if="pending" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <div v-for="i in 10" :key="i" class="relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-            <div class="skeleton z-10 absolute inset-0"></div>
-          </div>
+          <ImageCard
+            v-for="i in 10"
+            :key="i"
+            src="/img/cover.jpg"
+            :hover="false"
+            loading="lazy"
+            cache-key="cover"
+            :show-overlay="false"
+          />
         </div>
 
         <!-- 相册网格 -->
@@ -19,40 +26,14 @@
               }
               navigateTo(`/album/${album.id}`)
             }">
-              <div class="relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-                <div v-if="!imageLoaded[album.id]" class="skeleton z-10"></div>
-                <img
-                  v-if="album.photos?.length > 0"
-                  :src="album.cover"
-                  loading="eager"
-                  :class="[
-                    'object-cover w-full h-full transition-transform duration-300',
-                    {'group-hover:scale-105': imageLoaded[album.id]}
-                  ]"
-                  @error="$event.target.src = '/img/cover.jpg'"
-                  @load="imageLoaded[album.id] = true"
-                />
-                <img
-                  v-else
-                  src="/img/cover.jpg"
-                  :class="[
-                    'object-cover w-full h-full transition-transform duration-300',
-                    {'group-hover:scale-105': imageLoaded[album.id]}
-                  ]"
-                  @load="imageLoaded[album.id] = true"
-                />
-                
-                <!-- 相册信息悬浮层 -->
-                <div :class="[
-                  'absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300',
-                  {'group-hover:opacity-100': imageLoaded[album.id]}
-                ]">
-                  <div class="absolute bottom-0 left-0 right-0 p-4">
-                    <h3 class="text-white text-sm font-medium truncate">{{ album.name }}</h3>
-                    <p class="text-gray-200 text-xs mt-1">{{ album.photos?.length || 0 }} 张照片</p>
-                  </div>
-                </div>
-              </div>
+              <ImageCard
+                :src="album.photos?.length > 0 ? album.cover : '/img/cover.jpg'"
+                :title="album.name"
+                :subtitle="`${album.photos?.length || 0} 张照片`"
+                loading="lazy"
+                :cache-key="`cover_${album.name}`"
+                @load="imageLoaded[album.id] = true"
+              />
             </NuxtLink>
           </div>
         </div>
@@ -127,27 +108,7 @@
   transition: all 0.3s ease-in-out;
 }
 
-.skeleton {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s infinite;
-}
 
-.dark .skeleton {
-  background: linear-gradient(90deg, #2d3748 25%, #1a202c 50%, #2d3748 75%);
-  background-size: 200% 100%;
-}
-
-@keyframes skeleton-loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
 </style>
 
 <script setup>
@@ -167,7 +128,8 @@ const imageLoaded = ref(import.meta.server ? new Proxy({}, {
 const { data: albumsData, pending } = await useFetch('/api/alist/albums', {
   query: computed(() => ({
     page: currentPage.value,
-    pageSize: pageSize.value
+    pageSize: pageSize.value,
+    q: route.query.q || ''
   })),
   watch: [currentPage],
   server: true,

@@ -27,32 +27,16 @@
       <div v-else class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
         <div v-for="item in albumData?.data?.items" :key="item.name" 
           @click="openImageViewer(item)"
-          class="break-inside-avoid group relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
-          <!-- 骨架屏 -->
-          <div v-if="!imageLoaded[item.name]" class="skeleton aspect-[3/4] z-10"></div>
-          <!-- 图片 -->
-          <img
+          class="break-inside-avoid">
+          <ImageCard
             :src="item.thumb"
-            :data-src="item.url"
             :alt="item.name"
-            :class="[
-              'w-full h-auto object-cover transition-transform duration-300 cursor-pointer',
-              {'group-hover:scale-105': imageLoaded[item.name]}
-            ]"
-            @error="$event.target.src = '/img/cover.jpg'"
+            :title="item.name"
+            :loading="'lazy'"
             @load="imageLoaded[item.name] = true"
+            :cache-key="`${albumName}_${item.name}`"
             ref="lazyImages"
           />
-          
-          <!-- 悬浮信息 -->
-          <div :class="[
-            'absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300',
-            {'group-hover:opacity-100': imageLoaded[item.name]}
-          ]">
-            <div class="absolute bottom-0 left-0 right-0 p-4">
-              <p class="text-white text-sm truncate">{{ item.name }}</p>
-            </div>
-          </div>
         </div>
       </div>
     </UContainer>
@@ -187,94 +171,14 @@ const { data: albumData, pending } = await useFetch(`/api/alist/list`, {
   }
 })
 
-// 监听相册数据变化，更新懒加载
-let observer = null
+// 监听相册数据变化
 watch(albumData, () => {
   nextTick(() => {
-    if (observer && lazyImages.value) {
-      lazyImages.value.forEach(img => {
-        if (img) observer.observe(img)
-      })
-    }
+    // 更新图片加载状态
   })
 })
 
-// 图片缓存和懒加载
-const lazyImages = ref([])
 
-// 使用图片缓存组合式函数
-const { getCache } = useImageCache()
-const imageCache = getCache()
-
-// 将图片转换为base64
-const convertImageToBase64 = (url) => {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(img, 0, 0)
-      resolve(canvas.toDataURL('image/jpeg'))
-    }
-    img.onerror = reject
-    img.src = url
-  })
-}
-
-// 初始化IntersectionObserver
-onMounted(async () => {
-  observer = new IntersectionObserver(async (entries) => {
-    entries.forEach(async entry => {
-      if (entry.isIntersecting) {
-        const img = entry.target
-        const originalUrl = img.dataset.src
-        if (originalUrl) {
-          try {
-            // 生成缓存key
-            const urlParts = originalUrl.split('/cmcc/')
-            const cacheKey = urlParts[1] // 使用相对路径作为key
-            
-            // 尝试从缓存获取缩略图
-            const cachedImage = await imageCache.getImage(`thumb_${cacheKey}`)
-            if (cachedImage) {
-              img.src = cachedImage
-            } else {
-              // 从网络加载并缓存缩略图
-              const base64Data = await convertImageToBase64(img.src)
-              await imageCache.saveImage(`thumb_${cacheKey}`, base64Data)
-              img.src = base64Data
-            }
-          } catch (error) {
-            console.error('缩略图加载失败:', error)
-            // img.src = '/img/cover.jpg'
-          }
-          observer.unobserve(img)
-        }
-      }
-    })
-  }, {
-    rootMargin: '50px 50px',
-    threshold: 0.1
-  })
-
-  // 监听所有图片
-  nextTick(() => {
-    lazyImages.value.forEach(img => {
-      if (img) observer.observe(img)
-    })
-  })
-})
-
-// 组件卸载时清理
-onUnmounted(() => {
-  if (observer) {
-    observer.disconnect()
-    observer = null
-  }
-})
 
 // 图片查看器状态
 const isImageViewerOpen = ref(false)
@@ -373,22 +277,8 @@ const openImageViewer = async (image) => {
   currentImageIndex.value = albumData.value.data.items.findIndex(item => item.name === image.name)
 
   try {
-    // 生成缓存key
-    const urlParts = image.url.split('/cmcc/')
-    const cacheKey = urlParts[1] // 使用相对路径作为key
-    
-    // 尝试从缓存获取
-    const cachedImage = await imageCache.getImage(cacheKey)
-    if (cachedImage) {
-      currentImage.value = { ...image, url: cachedImage }
-      imageLoaded.value.viewer = true
-    } else {
-      // 从网络加载并缓存
-      const base64Data = await convertImageToBase64(image.url)
-      await imageCache.saveImage(cacheKey, base64Data)
-      currentImage.value = { ...image, url: base64Data }
-      imageLoaded.value.viewer = true
-    }
+    currentImage.value = image
+    imageLoaded.value.viewer = true
   } catch (error) {
     console.error('大图加载失败:', error)
     currentImage.value = { ...image, url: '/img/cover.jpg' }

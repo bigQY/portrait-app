@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     const page = parseInt(query.page) || 1
     const pageSize = parseInt(query.pageSize) || DEFAULT_PAGE_SIZE
+    const searchQuery = query.q?.toLowerCase() || ''
 
     // 确保已登录
     await alistClient.login()
@@ -17,7 +18,12 @@ export default defineEventHandler(async (event) => {
     // 获取写真图床目录下的所有相册目录
     const basePath = '/cmcc/图床相册'
     const dirsResponse = await alistClient.getFiles(basePath)
-    const allDirs = dirsResponse.content.filter(dir => dir.is_dir)
+    let allDirs = dirsResponse.content.filter(dir => dir.is_dir)
+    
+    // 如果有搜索关键词，过滤目录
+    if (searchQuery) {
+      allDirs = allDirs.filter(dir => dir.name.toLowerCase().includes(searchQuery))
+    }
     
     // 计算总数和分页信息
     const total = allDirs.length
@@ -29,7 +35,7 @@ export default defineEventHandler(async (event) => {
     const currentPageDirs = allDirs.slice(startIndex, endIndex)
 
     // 只处理当前页的相册信息
-    const cacheKey = `${CACHE_KEY_PREFIX}_page_${page}_${pageSize}`
+    const cacheKey = `${CACHE_KEY_PREFIX}_page_${page}_${pageSize}_search_${searchQuery}`
     let pageAlbums = cache.get(cacheKey)
 
     if (!pageAlbums) {
