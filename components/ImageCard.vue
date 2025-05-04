@@ -10,13 +10,30 @@
       :class="[
         'w-full h-full object-cover transition-transform duration-300',
         aspectRatioClass,
-        {'group-hover:scale-105': isLoaded && hover && src !== '/img/cover.jpg'}
+        {'group-hover:scale-105': isLoaded && hover && src !== '/img/cover.jpg'},
+        {'blur-xl': isNSFW}
       ]"
       :loading="loading"
       @error="handleError"
       @load="handleLoad"
       ref="imageRef"
     />
+    
+    <!-- NSFW警告 -->
+    <div v-if="isNSFW || isChecking" class="absolute inset-0 flex items-center justify-center z-20 bg-black/30">
+      <div class="bg-white dark:bg-gray-800 p-3 rounded-lg text-center shadow-lg">
+        <template v-if="isChecking">
+          <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-blue-500 mx-auto mb-2 animate-spin" />
+          <p class="text-sm font-medium text-gray-900 dark:text-white">正在检测</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">请稍候...</p>
+        </template>
+        <template v-else>
+          <UIcon name="i-lucide-shield-alert" class="w-6 h-6 text-red-500 mx-auto mb-2" />
+          <p class="text-sm font-medium text-gray-900 dark:text-white">内容已保护</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">青少年模式已开启</p>
+        </template>
+      </div>
+    </div>
     
     <!-- 悬浮信息 -->
     <div v-if="showOverlay" :class="[
@@ -34,8 +51,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useImageCache } from '../composables/useImageCache'
+import teenMode from '../composables/useTeenMode'
+
 
 const props = defineProps({
   src: {
@@ -80,8 +99,63 @@ const emit = defineEmits(['load', 'error'])
 
 const isLoaded = ref(false)
 const imageRef = ref(null)
+const isNSFW = ref(false)
+const isChecking = ref(false)
 const { getCache } = useImageCache()
 const imageCache = getCache()
+const { isTeenModeEnabled } = teenMode
+
+// 检测图片是否适合
+const checkImageContent = async () => {
+  if (!import.meta.client || !isTeenModeEnabled.value || !imageRef.value || !isLoaded.value) return
+  
+  try {
+    isChecking.value = true
+    const nsfwModel = await teenMode.getNSFWModel()
+    if (!nsfwModel) return
+    
+    // 创建一个新的Image对象用于检测
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    
+    await new Promise((resolve, reject) => {
+      img.onload = resolve
+      img.onerror = reject
+      img.src = imageRef.value.src
+    })
+    
+    const predictions = await nsfwModel.classify(img)
+    console.log('图片内容检测结果:', predictions)
+    
+    // 检查是否包含不适合的内容
+    // 根据NSFW.js的分类，检查Porn和Sexy类别的概率
+    const pornPrediction = predictions.find(p => p.className === 'Porn')
+    const sexyPrediction = predictions.find(p => p.className === 'Sexy')
+    
+    if (
+      (pornPrediction && pornPrediction.probability > 0.4) || 
+      (sexyPrediction && sexyPrediction.probability > 0.8)
+    ) {
+      isNSFW.value = true
+    } else {
+      isNSFW.value = false
+    }
+  } catch (error) {
+    console.error('NSFW检测失败:', error)
+    isNSFW.value = false
+  } finally {
+    isChecking.value = false
+  }
+}
+
+// 监听青少年模式变化
+watch(isTeenModeEnabled, (newValue) => {
+  if (newValue && isLoaded.value) {
+    loadNSFWModel().then(() => checkImageContent())
+  } else {
+    isNSFW.value = false
+  }
+}, { immediate: true })
 
 const aspectRatioClass = computed(() => `aspect-[${props.aspectRatio}]`)
 
@@ -90,35 +164,60 @@ const convertImageToBase64 = (url) => {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
+    
+    // 设置加载超时
+    const timeout = setTimeout(() => {
+      img.src = ''
+      reject(new Error('图片加载超时'))
+    }, 15000)
+    
     img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(img, 0, 0)
-      resolve(canvas.toDataURL('image/jpeg'))
+      clearTimeout(timeout)
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width
+        canvas.height = img.height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('无法创建canvas上下文'))
+          return
+        }
+        ctx.drawImage(img, 0, 0)
+        const base64Data = canvas.toDataURL('image/jpeg')
+        if (!base64Data || base64Data === 'data:,') {
+          reject(new Error('图片数据转换失败'))
+          return
+        }
+        resolve(base64Data)
+      } catch (error) {
+        reject(error)
+      }
     }
-    img.onerror = reject
+    
+    img.onerror = (error) => {
+      clearTimeout(timeout)
+      reject(new Error(`图片加载失败: ${error.message || '未知错误'}`))
+    }
+    
     img.src = url
   })
 }
 
 // 加载并缓存图片
-const loadAndCacheImage = async () => {
+const loadAndCacheImage = async (retryCount = 0) => {
   if (props.src === '/img/cover.jpg') return
+  // 生成缓存key
+  let cacheKey
+  if (props.cacheKey){
+    cacheKey = props.cacheKey
+  } else {
+    const urlParts = props.src.split('/cmcc/')
+    cacheKey = urlParts[1] // 使用相对路径作为key
+  }
   
-  try {
-    // 生成缓存key
-    let cacheKey
-    if (props.cacheKey){
-      cacheKey = props.cacheKey
-    } else {
-      const urlParts = props.src.split('/cmcc/')
-      cacheKey = urlParts[1] // 使用相对路径作为key
-    }
-    
-    if (!cacheKey) return
+  if (!cacheKey) return
 
+  try {
     // 尝试从缓存获取
     const cachedImage = await imageCache.getImage(`thumb_${cacheKey}`)
     if (cachedImage) {
@@ -130,8 +229,16 @@ const loadAndCacheImage = async () => {
       imageRef.value.src = base64Data
     }
   } catch (error) {
-    console.error('图片加载失败:', error)
-    // imageRef.value.src = '/img/cover.jpg'
+    // console.error('图片加载失败:', error)
+    // 最多重试3次
+    if (retryCount < 3) {
+      // console.log(`重试加载图片 (${retryCount + 1}/3)...`)
+      // await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+      // return loadAndCacheImage(retryCount + 1)
+    } else {
+      // 重试失败后使用默认封面图
+      // imageRef.value.src = '/img/cover.jpg'
+    }
   }
 }
 
@@ -158,9 +265,15 @@ const handleError = (event) => {
   emit('error', event)
 }
 
-const handleLoad = (event) => {
+const handleLoad = async (event) => {
   isLoaded.value = true
   emit('load', event)
+  
+  // 如果青少年模式开启，检测图片内容
+  if (isTeenModeEnabled.value && import.meta.client) {
+    await teenMode.getNSFWModel()
+    checkImageContent()
+  }
 }
 
 defineExpose({

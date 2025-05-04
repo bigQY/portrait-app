@@ -7,7 +7,16 @@
         </NuxtLink>
         <!-- 右侧工具栏 -->
         <div class="flex items-center gap-4">
-          <SearchBar />
+          <SearchBar v-if="!isAlbumPage" />
+          <!-- 青少年模式开关 -->
+          <button 
+            @click="toggleTeenMode" 
+            class="flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200"
+            :class="isTeenModeEnabled ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'"
+          >
+            <UIcon :name="isTeenModeEnabled ? 'i-lucide-shield-check' : 'i-lucide-shield'" class="w-4 h-4 mr-1" />
+            青少年模式
+          </button>
           <ThemeToggle />
         </div>
       </div>
@@ -19,4 +28,12 @@
 // 组件引入
 import SearchBar from './SearchBar.vue'
 import ThemeToggle from './ThemeToggle.vue'
+import teenMode from '../composables/useTeenMode'
+
+// 使用路由判断当前页面
+const route = useRoute()
+const isAlbumPage = computed(() => route.path.startsWith('/album/'))
+
+// 青少年模式状态
+const { isTeenModeEnabled, toggleTeenMode } = teenMode
 </script>

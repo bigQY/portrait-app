@@ -5,7 +5,7 @@
       <div class="py-6 flex items-center gap-4">
         <button 
           @click="async () => {
-            await navigateTo('/')
+            $router.back()
             // 等待DOM更新后清除动画类
             nextTick(() => {
               const elements = document.querySelectorAll('.fade-out')
@@ -93,7 +93,7 @@
         </button>
         <!-- 下载按钮 -->
         <button 
-          class="z-30 fixed bottom-4 right-4 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors duration-200 flex items-center gap-2 transition-opacity duration-300"
+          class="z-30 fixed bottom-4 right-4 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-300 flex items-center gap-2"
           :class="{'opacity-0': !showControls}"
           @click="downloadImage(currentImage)"
         >
@@ -102,7 +102,7 @@
         </button>
       </div>
         <!-- 底部预览图 -->
-        <div class="absolute z-30 fixed bottom-0 left-0 right-0 bg-black/50 transition-opacity duration-300 overflow-hidden pb-4" :class="{'opacity-0': !showControls}">
+        <div class="z-30 fixed bottom-0 left-0 right-0 bg-black/50 transition-all duration-300 overflow-hidden pb-4" :class="{'opacity-0': !showControls}">
           <div 
             class="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar w-full max-w-screen-2xl mx-auto" 
             style="scroll-behavior: smooth;"
