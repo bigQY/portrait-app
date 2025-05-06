@@ -49,19 +49,44 @@
             <UIcon name="i-lucide-chevron-left" class="w-5 h-5" />
           </UButton>
           
-          <div class="flex space-x-1">
+          <div class="flex space-x-1 relative">
             <template v-for="page in displayPages" :key="page">
-              <UButton
-                v-if="page !== '...'"
-                :variant="page === currentPage ? 'soft' : 'ghost'"
-                @click="changePage(page)"
-                class="w-10 h-10 flex items-center justify-center text-gray-700 dark:text-gray-200 transition-all duration-300"
-                :class="{
-                  'bg-gray-100 dark:bg-gray-800 font-medium': page === currentPage
-                }"
-              >
-                {{ page }}
-              </UButton>
+              <template v-if="page !== '...'">
+                <UButton
+                  v-if="page !== currentPage || !showPageInput"
+                  :variant="page === currentPage ? 'soft' : 'ghost'"
+                  @click="page === currentPage ? showPageInput = true : changePage(page)"
+                  class="w-10 h-10 flex items-center justify-center text-gray-700 dark:text-gray-200 transition-all duration-300 relative group"
+                  :class="{
+                    'bg-gray-100 dark:bg-gray-800 font-medium': page === currentPage
+                  }"
+                >
+                  <div class="relative w-full h-full flex items-center justify-center">
+                    {{ page }}
+                    <UIcon 
+                      v-if="page === currentPage" 
+                      name="i-lucide-pencil" 
+                      class="ml-1  w-3.5 h-3.5 -right-0.5 -top-0.5 transition-opacity duration-200 text-gray-500 dark:text-gray-400" 
+                    />
+                  </div>
+                </UButton>
+                <!-- 页码输入框 -->
+                <div 
+                  v-if="page === currentPage && showPageInput" 
+                  class="z-10"
+                >
+                  <input
+                    type="number"
+                    v-model="pageInputValue"
+                    @blur="handlePageInput"
+                    @keyup.enter="handlePageInput"
+                    class="w-10 h-10 text-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    :min="1"
+                    :max="totalPages"
+                    ref="pageInput"
+                  />
+                </div>
+              </template>
               <span v-else class="w-10 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400">...</span>
             </template>
           </div>
@@ -119,6 +144,31 @@ const router = useRouter()
 const currentPage = ref(parseInt(route.query.page) || 1)
 const pageSize = ref(10)
 const totalPages = ref(1)
+
+// 页码输入相关
+const showPageInput = ref(false)
+const pageInputValue = ref('')
+const pageInput = ref(null)
+
+// 处理页码输入
+const handlePageInput = () => {
+  const newPage = parseInt(pageInputValue.value)
+  if (newPage && newPage >= 1 && newPage <= totalPages.value) {
+    changePage(newPage)
+  }
+  showPageInput.value = false
+  pageInputValue.value = ''
+}
+
+// 监听页码输入框显示状态
+watch(showPageInput, (newVal) => {
+  if (newVal) {
+    pageInputValue.value = currentPage.value.toString()
+    nextTick(() => {
+      pageInput.value[0]?.focus()
+    })
+  }
+})
 // 服务端渲染时默认为true，避免显示骨架屏
 const imageLoaded = ref(import.meta.server ? new Proxy({}, {
   get: () => true
