@@ -49,15 +49,20 @@
 <script setup>
 import { useDebounceFn } from '@vueuse/core'
 
-const isSearchOpen = ref(false)
-const searchQuery = ref('')
-const searchInput = ref(null)
 const route = useRoute()
+const isSearchOpen = ref(false)
+const searchQuery = ref(route.query.q || '')
+const searchInput = ref(null)
 
 // 热搜词列表
 const hotTags = ref(['蠢沫沫','绮太郎','爆机少女喵小吉','森萝财团','桜井宁宁', '喵糖映画', 'BETA','少女',
 '白丝','女仆','黑丝','肉丝','学妹','制服','体操','护士','睡衣','旗袍','马尾','JK','死库水','兔女郎','和服',
 '学妹','女友', '毛衣','户外','精灵', '居家', '美足', '夏日', '浴缸', '内衣', '短裙','修女'])
+
+// 监听路由变化，更新搜索框内容
+watch(() => route.query.q, (newQuery) => {
+  searchQuery.value = newQuery || ''
+})
 
 // 点击热搜词
 const handleTagClick = (tag) => {

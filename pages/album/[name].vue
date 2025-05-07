@@ -20,9 +20,16 @@
       </div>
 
       <!-- 加载状态 -->
-      <div v-if="pending" class="flex justify-center py-12">
-        <UIcon name="i-lucide-loader-2" class="w-8 h-8 text-gray-400 animate-spin"/>
+      <div v-if="showLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div v-for="i in 10" :key="i" class="relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse">
+          <div class="aspect-square w-full"></div>
+          <div class="p-4">
+            <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+            <div class="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
+          </div>
+        </div>
       </div>
+
       <!-- 图片瀑布流 -->
       <div v-else class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
         <div v-for="item in albumData?.data?.items" :key="item.name" 
@@ -173,7 +180,18 @@ const { data: albumData, pending } = await useFetch(`/api/alist/list`, {
       }
     }
     return data
-  }
+  },
+  lazy: true,
+  server: true,
+  initialCache: false
+})
+
+// 相册数据
+const albums = computed(() => albumData.value?.data?.items || [])
+
+// 计算是否显示加载状态
+const showLoading = computed(() => {
+  return pending.value || !albumData.value
 })
 
 // 监听相册数据变化
@@ -182,8 +200,6 @@ watch(albumData, () => {
     // 更新图片加载状态
   })
 })
-
-
 
 // 图片查看器状态
 const isImageViewerOpen = ref(false)

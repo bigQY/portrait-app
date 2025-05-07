@@ -178,10 +178,10 @@ const { data: albumsData, pending } = await useFetch('/api/alist/albums', {
     pageSize: pageSize.value,
     q: route.query.q || ''
   })),
-  watch: [currentPage],
+  watch: [currentPage, () => route.query.q], // 监听搜索参数变化
   server: true,
   initialCache: false,
-  key: `albums-${currentPage.value}`,
+  key: `albums-${currentPage.value}-${route.query.q || ''}`,
   lazy: true
 })
 
@@ -190,7 +190,7 @@ const albums = computed(() => albumsData.value?.data?.items || [])
 
 // 计算是否显示加载状态
 const showLoading = computed(() => {
-  return pending.value && !albumsData.value
+  return pending.value || (route.query.q && !albumsData.value)
 })
 
 // 计算要显示的页码
