@@ -101,10 +101,7 @@ const currentType = ref('views')
 const isLoading = ref(false)
 
 // 获取排行榜数据
-const { data: rankingsData, pending, refresh } = await useFetch('/api/rankings', {
-  query: computed(() => ({
-    type: currentType.value
-  })),
+const { data: rankingsData, pending, refresh } = await useFetch(() => `/api/rankings/${currentType.value}`, {
   lazy: true,
   server: true,
   initialCache: false
@@ -116,7 +113,7 @@ const showLoading = computed(() => {
 })
 
 // 排行榜数据
-const rankings = computed(() => rankingsData.value?.data || [])
+const rankings = computed(() => rankingsData.value?.results || [])
 
 // 切换排行榜类型
 const changeRankingType = async (type) => {

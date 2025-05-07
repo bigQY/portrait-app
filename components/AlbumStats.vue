@@ -64,11 +64,14 @@
         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         rows="3"
       ></textarea>
-      <div class="mt-2 flex justify-end">
+      <div class="mt-2 flex items-center justify-between gap-4">
+        <!-- Turnstile 验证组件 -->
+        <div ref="turnstileContainer" class="cf-turnstile"></div>
+        <!-- 发表按钮 -->
         <button
           @click="submitComment"
-          class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!newComment.trim() || isLoading"
+          class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          :disabled="!newComment.trim() || isLoading || !turnstileToken"
         >
           发表评论
         </button>
@@ -121,6 +124,7 @@
 <script setup>
 import { getFingerprint } from '~/utils/fingerprint'
 
+const config = useRuntimeConfig()
 const props = defineProps({
   albumName: {
     type: String,
@@ -136,21 +140,52 @@ const isLiked = ref(false)
 const comments = ref([])
 const newComment = ref('')
 const isLoading = ref(true)
+const turnstileContainer = ref(null)
+const turnstileToken = ref('')
 
-// 获取浏览器指纹
+// 初始化 Turnstile
 onMounted(async () => {
   fingerprint.value = await getFingerprint()
   recordView()
+  
+  // 加载 Turnstile
+  if (process.client) {
+    const script = document.createElement('script')
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
+    script.async = true
+    script.defer = true
+    document.head.appendChild(script)
+
+    script.onload = () => {
+      window.turnstile.render(turnstileContainer.value, {
+        sitekey: config.public.turnstileSiteKey,
+        callback: (token) => {
+          turnstileToken.value = token
+        },
+        'expired-callback': () => {
+          turnstileToken.value = ''
+        },
+        'error-callback': () => {
+          turnstileToken.value = ''
+        }
+      })
+    }
+  }
 })
 
 // 获取统计数据
 const fetchStats = async () => {
+  if (!props.albumName || props.albumName === '' || props.albumName === 'undefined') {
+    console.error('相册名称无效')
+    return
+  }
+
   try {
     isLoading.value = true
     const [viewsRes, likesRes, commentsRes] = await Promise.all([
-      $fetch(`/api/album/${props.albumName}/views`),
-      $fetch(`/api/album/${props.albumName}/likes`),
-      $fetch(`/api/album/${props.albumName}/comments`)
+      $fetch(`/api/album/${encodeURIComponent(props.albumName)}/views`),
+      $fetch(`/api/album/${encodeURIComponent(props.albumName)}/likes`),
+      $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments`)
     ])
     
     views.value = viewsRes.count
@@ -165,14 +200,14 @@ const fetchStats = async () => {
 
 // 处理点赞
 const handleLike = async () => {
-  if (!fingerprint.value || isLoading.value) {
+  if (!fingerprint.value || isLoading.value || !props.albumName || props.albumName === '' || props.albumName === 'undefined') {
     return
   }
 
   try {
     isLoading.value = true
     const action = isLiked.value ? 'unlike' : 'like'
-    const res = await $fetch(`/api/album/${props.albumName}/likes`, {
+    const res = await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/likes`, {
       method: 'POST',
       body: {
         fingerprint: fingerprint.value,
@@ -191,20 +226,23 @@ const handleLike = async () => {
 
 // 提交评论
 const submitComment = async () => {
-  if (!newComment.value.trim() || !fingerprint.value || isLoading.value) return
+  if (!newComment.value.trim() || !fingerprint.value || isLoading.value || !props.albumName || props.albumName === '' || props.albumName === 'undefined' || !turnstileToken.value) return
 
   try {
     isLoading.value = true
-    await $fetch(`/api/album/${props.albumName}/comments`, {
+    await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments`, {
       method: 'POST',
       body: {
         content: newComment.value,
         userName: nickname.value.trim() || '游客',
-        fingerprint: fingerprint.value
+        fingerprint: fingerprint.value,
+        turnstileToken: turnstileToken.value
       }
     })
 
     newComment.value = ''
+    turnstileToken.value = ''
+    window.turnstile.reset()
     await fetchStats()
   } catch (error) {
     console.error('提交评论失败：', error)
@@ -215,16 +253,12 @@ const submitComment = async () => {
 
 // 删除评论
 const deleteComment = async (id) => {
+  if (!id || !fingerprint.value || !props.albumName || props.albumName === '' || props.albumName === 'undefined') {
+    console.error('删除评论失败：缺少必要参数', { id, fingerprint: fingerprint.value, albumName: props.albumName })
+    return
+  }
+
   try {
-    if (!fingerprint.value) {
-      fingerprint.value = await getFingerprint()
-    }
-
-    if (!id || !fingerprint.value) {
-      console.error('删除评论失败：缺少必要参数', { id, fingerprint: fingerprint.value })
-      return
-    }
-
     isLoading.value = true
     const response = await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments`, {
       method: 'DELETE',
@@ -255,9 +289,22 @@ const formatDate = (date) => {
 
 // 记录浏览量
 const recordView = async () => {
+  if (!props.albumName || props.albumName === '' || props.albumName === 'undefined') {
+    console.error('相册名称无效')
+    return
+  }
+
+  if (!fingerprint.value) {
+    console.error('浏览器指纹无效')
+    return
+  }
+
   try {
-    await $fetch(`/api/album/${props.albumName}/views`, {
-      method: 'POST'
+    await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/views`, {
+      method: 'POST',
+      body: {
+        fingerprint: fingerprint.value
+      }
     })
     await fetchStats()
   } catch (error) {

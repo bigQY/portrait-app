@@ -116,7 +116,7 @@ export class AlistClient {
       }
 
       // 将数据存入缓存，设置30分钟过期
-      cache.set(cacheKey, response.data, 1 * 60 * 1000)
+      cache.set(cacheKey, response.data, 30 * 60 * 1000)
       return response.data
     } catch (error) {
       console.error('Error fetching files:', error)

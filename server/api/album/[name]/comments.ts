@@ -1,10 +1,35 @@
 import { D1Database } from '@cloudflare/workers-types'
 
+interface TurnstileResponse {
+  success: boolean
+  error_codes?: string[]
+  challenge_ts?: string
+  hostname?: string
+  action?: string
+  cdata?: string
+}
+
+// 验证 Turnstile 令牌
+async function verifyTurnstileToken(token: string, secretKey: string) {
+  const formData = new FormData()
+  formData.append('secret', secretKey)
+  formData.append('response', token)
+
+  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    body: formData
+  })
+
+  const data = await response.json() as TurnstileResponse
+  return data.success
+}
+
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
   const db = event.context.cloudflare.env.DB as D1Database
   const albumName = event.context.params?.name
 
-  if (!albumName) {
+  if (!albumName || albumName === '' || albumName === 'undefined') {
     throw createError({
       statusCode: 400,
       message: '相册名称不能为空'
@@ -22,12 +47,21 @@ export default defineEventHandler(async (event) => {
   // 添加新评论
   if (event.method === 'POST') {
     const body = await readBody(event)
-    const { content, userName, fingerprint } = body
+    const { content, userName, fingerprint, turnstileToken } = body
 
-    if (!content || !fingerprint) {
+    if (!content || !fingerprint || !turnstileToken) {
       throw createError({
         statusCode: 400,
-        message: '评论内容和指纹不能为空'
+        message: '评论内容、指纹和验证令牌不能为空'
+      })
+    }
+
+    // 验证 Turnstile 令牌
+    const isValid = await verifyTurnstileToken(turnstileToken, config.turnstileSecretKey)
+    if (!isValid) {
+      throw createError({
+        statusCode: 400,
+        message: '验证失败，请重试'
       })
     }
 

@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS album_likes (
 CREATE TABLE IF NOT EXISTS album_views (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     album_name TEXT NOT NULL,
-    ip_address TEXT NOT NULL,
+    fingerprint TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(album_name, ip_address)
+    UNIQUE(album_name, fingerprint)
 ); 

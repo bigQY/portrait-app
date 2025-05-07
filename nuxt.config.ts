@@ -91,4 +91,13 @@ export default defineNuxtConfig({
       tailwindcss(),
     ],
   },
+
+  runtimeConfig: {
+    // 私有密钥，仅在服务器端可用
+    turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY,
+    // 公共密钥，在客户端和服务器端都可用
+    public: {
+      turnstileSiteKey: process.env.TURNSTILE_SITE_KEY
+    }
+  },
 })

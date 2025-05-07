@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const db = event.context.cloudflare.env.DB as D1Database
   const albumName = event.context.params?.name
 
-  if (!albumName) {
+  if (!albumName || albumName === '' || albumName === 'undefined') {
     throw createError({
       statusCode: 400,
       message: '相册名称不能为空'
@@ -21,17 +21,21 @@ export default defineEventHandler(async (event) => {
 
   // 增加浏览量
   if (event.method === 'POST') {
-    let ip = getRequestIP(event)
-    if (!ip) {
-      ip = '127.0.0.1'
+    const { fingerprint } = await readBody(event)
+    
+    if (!fingerprint) {
+      throw createError({
+        statusCode: 400,
+        message: '浏览器指纹不能为空'
+      })
     }
 
     try {
       await db.prepare(
-        'INSERT INTO album_views (album_name, ip_address) VALUES (?, ?)'
-      ).bind(albumName, ip).run()
+        'INSERT INTO album_views (album_name, fingerprint) VALUES (?, ?)'
+      ).bind(albumName, fingerprint).run()
     } catch (error) {
-      // 如果已经记录过该IP的访问，忽略错误
+      // 如果已经记录过该指纹的访问，忽略错误
     }
 
     // 返回最新的浏览量

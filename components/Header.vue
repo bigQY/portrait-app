@@ -7,14 +7,13 @@
         </NuxtLink>
         <!-- 右侧工具栏 -->
         <div class="flex items-center gap-4">
-          <SearchBar v-if="!isAlbumPage" />
           <!-- 排行榜入口 -->
           <NuxtLink 
             to="/rankings"
             class="flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-green-200 hover:bg-red-200 dark:hover:bg-red-800 transition-colors duration-200"
           >
-            <UIcon name="i-lucide-trophy" class="w-4 h-4 mr-1" />
-            排行榜
+            <UIcon name="i-lucide-trophy" class="w-4 h-4" />
+            <span class="ml-1 hidden sm:inline">排行榜</span>
           </NuxtLink>
           <!-- 青少年模式开关 -->
           <button 
@@ -22,9 +21,10 @@
             class="flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200"
             :class="isTeenModeEnabled ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'"
           >
-            <UIcon :name="isTeenModeEnabled ? 'i-lucide-shield-check' : 'i-lucide-shield'" class="w-4 h-4 mr-1" />
-            青少年模式
+            <UIcon :name="isTeenModeEnabled ? 'i-lucide-shield-check' : 'i-lucide-shield'" class="w-4 h-4" />
+            <span class="ml-1 hidden sm:inline">青少年模式</span>
           </button>
+          <SearchBar v-if="!isAlbumPage" />
           <ThemeToggle />
         </div>
       </div>

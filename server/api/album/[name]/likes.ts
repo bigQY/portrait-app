@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const db = event.context.cloudflare.env.DB as D1Database
   const albumName = event.context.params?.name
 
-  if (!albumName) {
+  if (!albumName || albumName === '' || albumName === 'undefined') {
     throw createError({
       statusCode: 400,
       message: '相册名称不能为空'
