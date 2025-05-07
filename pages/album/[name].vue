@@ -39,6 +39,11 @@
           />
         </div>
       </div>
+
+      <!-- 统计信息和评论区 -->
+      <div class="mt-12">
+        <AlbumStats :album-name="albumName" />
+      </div>
     </UContainer>
     <!-- 自定义全屏图片查看器 -->
     <div v-if="isImageViewerOpen" 
