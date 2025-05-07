@@ -3,7 +3,12 @@
     <!-- 浏览量 -->
     <div class="flex items-center gap-2">
       <UIcon name="i-lucide-eye" class="w-5 h-5 text-gray-500 dark:text-gray-400"/>
-      <span class="text-gray-600 dark:text-gray-300">{{ views }} 次浏览</span>
+      <template v-if="isLoading">
+        <div class="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+      </template>
+      <template v-else>
+        <span class="text-gray-600 dark:text-gray-300">{{ views }} 次浏览</span>
+      </template>
     </div>
 
     <!-- 点赞按钮 -->
@@ -11,18 +16,32 @@
       @click="handleLike"
       class="flex items-center gap-2 px-3 py-1 rounded-full transition-colors duration-200"
       :class="isLiked ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'"
+      :disabled="isLoading"
     >
       <UIcon 
         :name="'i-lucide-heart'" 
         class="w-5 h-5"
       />
-      <span>{{ likes }} 个赞</span>
+      <template v-if="isLoading">
+        <div class="w-12 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+      </template>
+      <template v-else>
+        <span>{{ likes }} 个赞</span>
+      </template>
     </button>
   </div>
 
   <!-- 评论区 -->
   <div class="mt-6">
-    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">评论 ({{ comments.length }})</h3>
+    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+      评论 
+      <template v-if="isLoading">
+        <span class="inline-block w-8 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+      </template>
+      <template v-else>
+        ({{ comments.length }})
+      </template>
+    </h3>
     
     <!-- 评论输入框 -->
     <div class="mb-6">
@@ -49,7 +68,7 @@
         <button
           @click="submitComment"
           class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!newComment.trim()"
+          :disabled="!newComment.trim() || isLoading"
         >
           发表评论
         </button>
@@ -58,23 +77,43 @@
 
     <!-- 评论列表 -->
     <div class="space-y-4">
-      <div v-for="comment in comments" :key="comment.id" 
-        class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
-        <div class="flex justify-between items-start">
-          <div>
-            <span class="font-medium text-gray-900 dark:text-white">{{ comment.user_name }}</span>
-            <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{{ formatDate(comment.created_at) }}</span>
+      <!-- 骨骼屏加载动画 -->
+      <template v-if="isLoading">
+        <div v-for="i in 3" :key="i" 
+          class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="flex justify-between items-start">
+            <div class="flex items-center gap-2">
+              <div class="w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div class="w-24 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            </div>
           </div>
-          <button 
-            v-if="comment.fingerprint === fingerprint"
-            @click="deleteComment(comment.id)"
-            class="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200"
-          >
-            <UIcon name="i-lucide-trash-2" class="w-4 h-4"/>
-          </button>
+          <div class="mt-2 space-y-2">
+            <div class="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div class="w-3/4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
         </div>
-        <p class="mt-2 text-gray-700 dark:text-gray-300">{{ comment.content }}</p>
-      </div>
+      </template>
+
+      <!-- 实际评论列表 -->
+      <template v-else>
+        <div v-for="comment in comments" :key="comment.id" 
+          class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-medium text-gray-900 dark:text-white">{{ comment.user_name }}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{{ formatDate(comment.created_at) }}</span>
+            </div>
+            <button 
+              v-if="comment.fingerprint === fingerprint"
+              @click="deleteComment(comment.id)"
+              class="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200"
+            >
+              <UIcon name="i-lucide-trash-2" class="w-4 h-4"/>
+            </button>
+          </div>
+          <p class="mt-2 text-gray-700 dark:text-gray-300">{{ comment.content }}</p>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -96,6 +135,7 @@ const likes = ref(0)
 const isLiked = ref(false)
 const comments = ref([])
 const newComment = ref('')
+const isLoading = ref(true)
 
 // 获取浏览器指纹
 onMounted(async () => {
@@ -105,70 +145,101 @@ onMounted(async () => {
 
 // 获取统计数据
 const fetchStats = async () => {
-  const [viewsRes, likesRes, commentsRes] = await Promise.all([
-    $fetch(`/api/album/${props.albumName}/views`),
-    $fetch(`/api/album/${props.albumName}/likes`),
-    $fetch(`/api/album/${props.albumName}/comments`)
-  ])
-  
-  views.value = viewsRes.count
-  likes.value = likesRes.count
-  comments.value = commentsRes.results || []
+  try {
+    isLoading.value = true
+    const [viewsRes, likesRes, commentsRes] = await Promise.all([
+      $fetch(`/api/album/${props.albumName}/views`),
+      $fetch(`/api/album/${props.albumName}/likes`),
+      $fetch(`/api/album/${props.albumName}/comments`)
+    ])
+    
+    views.value = viewsRes.count
+    likes.value = likesRes.count
+    comments.value = commentsRes.results || []
+  } catch (error) {
+    console.error('获取统计数据失败：', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 处理点赞
 const handleLike = async () => {
-  if (!fingerprint.value) {
-    // 这里可以添加提示
+  if (!fingerprint.value || isLoading.value) {
     return
   }
 
-  const action = isLiked.value ? 'unlike' : 'like'
-  const res = await $fetch(`/api/album/${props.albumName}/likes`, {
-    method: 'POST',
-    body: {
-      fingerprint: fingerprint.value,
-      action
-    }
-  })
-  
-  likes.value = res.count
-  isLiked.value = !isLiked.value
+  try {
+    isLoading.value = true
+    const action = isLiked.value ? 'unlike' : 'like'
+    const res = await $fetch(`/api/album/${props.albumName}/likes`, {
+      method: 'POST',
+      body: {
+        fingerprint: fingerprint.value,
+        action
+      }
+    })
+    
+    likes.value = res.count
+    isLiked.value = !isLiked.value
+  } catch (error) {
+    console.error('点赞失败：', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 提交评论
 const submitComment = async () => {
-  if (!newComment.value.trim() || !fingerprint.value) return
+  if (!newComment.value.trim() || !fingerprint.value || isLoading.value) return
 
-  await $fetch(`/api/album/${props.albumName}/comments`, {
-    method: 'POST',
-    body: {
-      content: newComment.value,
-      userName: nickname.value.trim() || '游客',
-      fingerprint: fingerprint.value
-    }
-  })
+  try {
+    isLoading.value = true
+    await $fetch(`/api/album/${props.albumName}/comments`, {
+      method: 'POST',
+      body: {
+        content: newComment.value,
+        userName: nickname.value.trim() || '游客',
+        fingerprint: fingerprint.value
+      }
+    })
 
-  newComment.value = ''
-  await fetchStats()
+    newComment.value = ''
+    await fetchStats()
+  } catch (error) {
+    console.error('提交评论失败：', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 删除评论
 const deleteComment = async (id) => {
-  if (!fingerprint.value) {
-    // 如果指纹不存在，重新获取
-    fingerprint.value = await getFingerprint()
-  }
-
-  await $fetch(`/api/album/${props.albumName}/comments`, {
-    method: 'DELETE',
-    body: { 
-      id,
-      fingerprint: fingerprint.value
+  try {
+    if (!fingerprint.value) {
+      fingerprint.value = await getFingerprint()
     }
-  })
-  
-  await fetchStats()
+
+    if (!id || !fingerprint.value) {
+      console.error('删除评论失败：缺少必要参数', { id, fingerprint: fingerprint.value })
+      return
+    }
+
+    isLoading.value = true
+    const response = await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments`, {
+      method: 'DELETE',
+      body: { 
+        id,
+        fingerprint: fingerprint.value
+      }
+    })
+    
+    await fetchStats()
+  } catch (error) {
+    console.error('删除评论失败：', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 格式化日期
@@ -184,9 +255,13 @@ const formatDate = (date) => {
 
 // 记录浏览量
 const recordView = async () => {
-  await $fetch(`/api/album/${props.albumName}/views`, {
-    method: 'POST'
-  })
-  await fetchStats()
+  try {
+    await $fetch(`/api/album/${props.albumName}/views`, {
+      method: 'POST'
+    })
+    await fetchStats()
+  } catch (error) {
+    console.error('记录浏览量失败：', error)
+  }
 }
 </script> 

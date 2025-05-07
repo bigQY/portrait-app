@@ -2,18 +2,15 @@
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <UContainer>
       <div class="py-8">
-
         <!-- 加载状态 -->
-        <div v-if="pending" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <ImageCard
-            v-for="i in 10"
-            :key="i"
-            src="/img/cover.jpg"
-            :hover="false"
-            loading="lazy"
-            cache-key="cover"
-            :show-overlay="false"
-          />
+        <div v-if="showLoading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div v-for="i in 10" :key="i" class="relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse">
+            <div class="aspect-square w-full"></div>
+            <div class="p-4">
+              <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+              <div class="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
+            </div>
+          </div>
         </div>
 
         <!-- 相册网格 -->
@@ -184,7 +181,16 @@ const { data: albumsData, pending } = await useFetch('/api/alist/albums', {
   watch: [currentPage],
   server: true,
   initialCache: false,
-  key: `albums-${currentPage.value}`
+  key: `albums-${currentPage.value}`,
+  lazy: true
+})
+
+// 相册数据
+const albums = computed(() => albumsData.value?.data?.items || [])
+
+// 计算是否显示加载状态
+const showLoading = computed(() => {
+  return pending.value && !albumsData.value
 })
 
 // 计算要显示的页码
@@ -257,9 +263,6 @@ const changePage = async (page) => {
     setTimeout(() => container.classList.remove('fade-in'), 300)
   }
 }
-
-// 相册数据
-const albums = computed(() => albumsData.value?.data?.items || [])
 
 const imageObserver = ref(null)
 
