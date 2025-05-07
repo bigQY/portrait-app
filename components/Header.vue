@@ -8,6 +8,14 @@
         <!-- 右侧工具栏 -->
         <div class="flex items-center gap-4">
           <SearchBar v-if="!isAlbumPage" />
+          <!-- 排行榜入口 -->
+          <NuxtLink 
+            to="/rankings"
+            class="flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-green-200 hover:bg-red-200 dark:hover:bg-red-800 transition-colors duration-200"
+          >
+            <UIcon name="i-lucide-trophy" class="w-4 h-4 mr-1" />
+            排行榜
+          </NuxtLink>
           <!-- 青少年模式开关 -->
           <button 
             @click="toggleTeenMode" 
