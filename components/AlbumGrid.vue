@@ -4,7 +4,8 @@
       <div class="py-8">
         <!-- 加载状态 -->
         <div v-if="showLoading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <div v-for="i in 10" :key="i" class="relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse">
+          <div v-for="i in 10" :key="i"
+            class="relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse">
             <div class="aspect-square w-full"></div>
             <div class="p-4">
               <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
@@ -23,77 +24,50 @@
               }
               navigateTo(`/album/${album.id}`)
             }">
-              <ImageCard
-                :src="album.photos?.length > 0 ? album.cover : '/img/cover.jpg'"
-                :title="album.name"
-                :subtitle="`${album.photos?.length || 0} 张照片`"
-                loading="lazy"
-                :cache-key="`cover_${album.name}`"
-                @load="imageLoaded[album.id] = true"
-              />
+              <ImageCard :src="album.photos?.length > 0 ? album.cover : '/img/cover.jpg'" :title="album.name"
+                :subtitle="`${album.photos?.length || 0} 张照片`" loading="lazy" :cache-key="`cover_${album.name}`"
+                @load="imageLoaded[album.id] = true" />
             </NuxtLink>
           </div>
         </div>
-
-        <!-- 分页器 -->
         <div class="mt-8 flex justify-center items-center space-x-1 sm:space-x-2">
-          <UButton
-            :disabled="currentPage === 1"
-            @click="changePage(currentPage - 1)"
+          <UButton :disabled="currentPage === 1" @click="changePage(currentPage - 1)"
             class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
-            variant="ghost"
-          >
+            variant="ghost">
             <UIcon name="i-lucide-chevron-left" class="w-4 h-4 sm:w-5 sm:h-5" />
           </UButton>
-          
+
           <div class="flex space-x-0.5 sm:space-x-1 relative">
             <template v-for="page in displayPages" :key="page">
               <template v-if="page !== '...'">
-                <UButton
-                  v-if="page !== currentPage || !showPageInput"
+                <UButton v-if="page !== currentPage || !showPageInput"
                   :variant="page === currentPage ? 'soft' : 'ghost'"
                   @click="page === currentPage ? showPageInput = true : changePage(page)"
                   class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-700 dark:text-gray-200 transition-all duration-300 relative group text-sm sm:text-base"
                   :class="{
                     'bg-gray-100 dark:bg-gray-800 font-medium': page === currentPage
-                  }"
-                >
+                  }">
                   <div class="relative w-full h-full flex items-center justify-center">
                     {{ page }}
-                    <UIcon 
-                      v-if="page === currentPage" 
-                      name="i-lucide-pencil" 
-                      class="ml-0.5 sm:ml-1 w-3 h-3 sm:w-3.5 sm:h-3.5 -right-0.5 -top-0.5 transition-opacity duration-200 text-gray-500 dark:text-gray-400" 
-                    />
+                    <UIcon v-if="page === currentPage" name="i-lucide-pencil"
+                      class="ml-0.5 sm:ml-1 w-3 h-3 sm:w-3.5 sm:h-3.5 -right-0.5 -top-0.5 transition-opacity duration-200 text-gray-500 dark:text-gray-400" />
                   </div>
                 </UButton>
                 <!-- 页码输入框 -->
-                <div 
-                  v-if="page === currentPage && showPageInput" 
-                  class="z-10"
-                >
-                  <input
-                    type="number"
-                    v-model="pageInputValue"
-                    @blur="handlePageInput"
-                    @keyup.enter="handlePageInput"
+                <div v-if="page === currentPage && showPageInput" class="z-10">
+                  <input type="number" v-model="pageInputValue" @blur="handlePageInput" @keyup.enter="handlePageInput"
                     class="w-8 h-8 sm:w-10 sm:h-10 text-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
-                    :min="1"
-                    :max="totalPages"
-                    ref="pageInput"
-                  />
+                    :min="1" :max="totalPages" ref="pageInput" />
                 </div>
               </template>
-              <span v-else class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm sm:text-base">...</span>
+              <span v-else
+                class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm sm:text-base">...</span>
             </template>
           </div>
 
-          <UButton
-            :disabled="currentPage === totalPages"
-            @click="changePage(currentPage + 1)"
+          <UButton :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)"
             class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
-            variant="ghost"
-          >
+            variant="ghost">
             <UIcon name="i-lucide-chevron-right" class="w-4 h-4 sm:w-5 sm:h-5" />
           </UButton>
         </div>
@@ -114,10 +88,12 @@
     opacity: 0.6;
     transform: scale(0.98);
   }
+
   50% {
     opacity: 0.4;
     transform: scale(0.95);
   }
+
   100% {
     opacity: 0.6;
     transform: scale(0.98);
@@ -246,10 +222,10 @@ const displayPages = computed(() => {
 watch(albumsData, (newData) => {
   if (newData?.data) {
     totalPages.value = newData.data.pagination?.totalPages || 1
-    
+
     // 重要：确保在数据更新后重置加载状态
     imageLoaded.value = {}
-    
+
     // 在下一个 tick 初始化观察器，确保 DOM 已更新
     nextTick(() => {
       if (import.meta.client) {
@@ -262,10 +238,10 @@ watch(albumsData, (newData) => {
 // 切换页面的方法
 const changePage = async (page) => {
   if (page === currentPage.value || page < 1 || page > totalPages.value) return
-  
+
   // 重置所有图片的加载状态
   imageLoaded.value = {}
-  
+
   // 添加页面切换动画类
   const container = document.querySelector('.grid')
   if (container) {
@@ -273,13 +249,16 @@ const changePage = async (page) => {
     await new Promise(resolve => setTimeout(resolve, 300))
   }
 
-  // 更新URL和页码，保持搜索参数
-  await router.push({
-    path: page === 1 ? '/' : `/page/${page}`,
-    query: route.query.q ? { q: route.query.q } : undefined
-  })
+  // 更新URL和页码，保持搜索参数，但不触发路由导航
+  const newPath = page === 1 ? '/' : `/page/${page}`
+  const newQuery = route.query.q ? { q: route.query.q } : undefined
+  window.history.replaceState(
+    {},
+    '',
+    newQuery ? `${newPath}?${new URLSearchParams(newQuery).toString()}` : newPath
+  )
   currentPage.value = page
-  
+
   // 恢复动画类
   if (container) {
     container.classList.remove('fade-out')
@@ -331,7 +310,7 @@ const initializeImageObserver = () => {
             // 生成缓存key
             const urlParts = coverUrl.split('/cmcc/')
             const cacheKey = urlParts[1] // 使用相对路径作为key
-            
+
             // 尝试从缓存获取缩略图
             const cachedImage = await imageCache.getImage(`thumb_${cacheKey}`)
             if (cachedImage) {
@@ -380,4 +359,4 @@ onUpdated(() => {
     elements.forEach(el => el.classList.remove('fade-out'))
   })
 })
-</script> 
+</script>
