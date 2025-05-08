@@ -2,23 +2,15 @@
   <div class="group relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
     <!-- 骨架屏 -->
     <div v-show="showSkeleton" class="skeleton z-10" :class="aspectRatioClass"></div>
-    
+
     <!-- 图片 -->
-    <img
-      :src="src"
-      :alt="alt"
-      :class="[
-        'w-full h-full object-cover transition-transform duration-300',
-        aspectRatioClass,
-        {'group-hover:scale-105': isLoaded && hover && src !== '/img/cover.jpg'},
-        {'blur-xl': isNSFW}
-      ]"
-      :loading="loading"
-      @error="handleError"
-      @load="handleLoad"
-      ref="imageRef"
-    />
-    
+    <img :src="src" :alt="alt" :class="[
+      'w-full h-full object-cover transition-transform duration-300',
+      aspectRatioClass,
+      { 'group-hover:scale-105': isLoaded && hover && src !== '/img/cover.jpg' },
+      { 'blur-xl': isNSFW }
+    ]" :loading="loading" @error="handleError" @load="handleLoad" ref="imageRef" />
+
     <!-- NSFW警告 -->
     <div v-if="isNSFW || isChecking" class="absolute inset-0 flex items-center justify-center z-20 bg-black/30">
       <div class="bg-white dark:bg-gray-800 p-3 rounded-lg text-center shadow-lg">
@@ -34,18 +26,20 @@
         </template>
       </div>
     </div>
-    
+
     <!-- 悬浮信息 -->
     <div v-if="showOverlay" :class="[
       'absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300',
-      {'group-hover:opacity-100': isLoaded && hover}
+      { 'group-hover:opacity-100': isLoaded && hover }
     ]">
-      <div class="absolute bottom-0 left-0 right-0 p-4">
-        <slot name="overlay">
+      <slot name="overlay">
+
+        <div class="absolute bottom-0 left-0 right-0 p-4">
           <h3 v-if="title" class="text-white text-sm font-medium truncate">{{ title }}</h3>
           <p v-if="subtitle" class="text-gray-200 text-xs mt-1">{{ subtitle }}</p>
-        </slot>
-      </div>
+        </div>
+      </slot>
+
     </div>
   </div>
 </template>
@@ -108,15 +102,15 @@ interface NSFWPrediction {
 const checkImageContent = async () => {
   // 确保只在客户端执行
   if (!import.meta.client || !isTeenModeEnabled.value || !imageRef.value || !isLoaded.value) return
-  
+
   try {
     isChecking.value = true
-    
+
     // 生成图片的唯一标识符（使用URL的哈希值）
     const imageUrl = imageRef.value.src
     const imageHash = await generateImageHash(imageUrl)
     const cacheKey = `nsfw_check_${imageHash}`
-    
+
     // 检查缓存中是否存在结果
     const cachedResult = localStorage.getItem(cacheKey)
     if (cachedResult) {
@@ -124,34 +118,34 @@ const checkImageContent = async () => {
       isNSFW.value = parsedResult.result
       return
     }
-    
+
     const nsfwModel = await getNSFWModel()
     if (!nsfwModel) return
-    
+
     // 创建一个新的Image对象用于检测
     const img = new Image()
     img.crossOrigin = 'anonymous'
-    
+
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve()
       img.onerror = () => reject(new Error('图片加载失败'))
       img.src = imageUrl
     })
-    
+
     const predictions = await nsfwModel.classify(img) as NSFWPrediction[]
     console.log('图片内容检测结果:', predictions)
-    
+
     // 检查是否包含不适合的内容
     const pornPrediction = predictions.find((p: NSFWPrediction) => p.className === 'Porn')
     const sexyPrediction = predictions.find((p: NSFWPrediction) => p.className === 'Sexy')
-    
+
     const isNSFWResult = Boolean(
-      (pornPrediction && pornPrediction.probability > 0.4) || 
+      (pornPrediction && pornPrediction.probability > 0.4) ||
       (sexyPrediction && sexyPrediction.probability > 0.8)
     )
-    
+
     isNSFW.value = isNSFWResult
-    
+
     // 将结果存入缓存，设置7天过期时间
     const cacheData = {
       result: isNSFWResult,
@@ -159,7 +153,7 @@ const checkImageContent = async () => {
       expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7天后过期
     }
     localStorage.setItem(cacheKey, JSON.stringify(cacheData))
-    
+
   } catch (error) {
     console.error('NSFW检测失败:', error)
     isNSFW.value = false
@@ -212,13 +206,13 @@ const convertImageToBase64 = (url: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
-    
+
     // 设置加载超时
     const timeout = setTimeout(() => {
       img.src = ''
       reject(new Error('图片加载超时'))
     }, 15000)
-    
+
     img.onload = () => {
       clearTimeout(timeout)
       try {
@@ -241,12 +235,12 @@ const convertImageToBase64 = (url: string): Promise<string> => {
         reject(error)
       }
     }
-    
+
     img.onerror = (error: Event) => {
       clearTimeout(timeout)
       reject(new Error(`图片加载失败: ${error instanceof Error ? error.message : '未知错误'}`))
     }
-    
+
     img.src = url
   })
 }
@@ -254,7 +248,7 @@ const convertImageToBase64 = (url: string): Promise<string> => {
 // 加载并缓存图片
 const loadAndCacheImage = async (retryCount = 0) => {
   if (props.src === '/img/cover.jpg' || !imageRef.value) return
-  
+
   // 生成缓存key
   let cacheKey
   if (props.cacheKey) {
@@ -263,7 +257,7 @@ const loadAndCacheImage = async (retryCount = 0) => {
     const urlParts = props.src.split('/cmcc/')
     cacheKey = urlParts[1] // 使用相对路径作为key
   }
-  
+
   if (!cacheKey) return
 
   try {
@@ -313,7 +307,7 @@ onMounted(() => {
       rootMargin: '50px 50px',
       threshold: 0.1
     })
-    
+
     observer.observe(imageRef.value)
   } else {
     loadAndCacheImage()
@@ -332,7 +326,7 @@ const handleError = (event: Event) => {
 const handleLoad = async (event: Event) => {
   isLoaded.value = true
   emit('load', event)
-  
+
   // 如果青少年模式开启，检测图片内容
   if (isTeenModeEnabled.value && import.meta.client) {
     await getNSFWModel()
@@ -364,6 +358,7 @@ defineExpose({
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }

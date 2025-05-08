@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
         try {
           const urlDirName = `/cmcc/${encodeURIComponent('图床相册')}/${encodeURIComponent(dir.name)}`
           const subDirFiles = (await alistClient.getFiles(`/cmcc/图床相册/${dir.name}`)).content
-          const photos = subDirFiles.filter(file => !file.is_dir && file.type ===5)
+          const photos = subDirFiles.filter(file => !file.is_dir && (file.type ===5 || file.type === 2))
           // 如果相册为空，使用默认封面
           const cover = photos.length > 0
             ? (subDirFiles.find(file => !file.is_dir && file.thumb)?.thumb || null)

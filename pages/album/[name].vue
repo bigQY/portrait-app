@@ -43,7 +43,19 @@
             @load="imageLoaded[item.name] = true"
             :cache-key="`${albumName}_${item.name}`"
             ref="lazyImages"
-          />
+          >
+            <!-- 添加视频播放图标 -->
+            <template v-if="item.type === 2" #overlay>
+              <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/30">
+                <div class="relative w-16 h-16 rounded-full bg-black/50 flex items-center justify-center group-hover:bg-black/70 transition-colors duration-200">
+                  <UIcon name="i-lucide-play" class="w-8 h-8 text-white"/>
+                </div>
+                <div class="mt-2 text-sm text-white bg-black/50 px-2 py-1 rounded">
+                  {{ item.name }}
+                </div>
+              </div>
+            </template>
+          </ImageCard>
         </div>
       </div>
 
@@ -77,13 +89,25 @@
       <div class="relative max-w-[90vw] max-h-[90vh] transition-transform duration-300" :class="{'scale-95': !imageLoaded.viewer, 'scale-100': imageLoaded.viewer}" @click="toggleControls">
         <!-- 缩略图作为背景 -->
         <img 
+          v-if="currentImage?.type !== 2"
           :src="currentImage?.thumb" 
           :alt="currentImage?.name"
           class="z-10 absolute inset-0 w-full h-full object-contain blur-sm opacity-50 transition-opacity duration-300"
           :class="{'opacity-50': !imageLoaded.viewer, 'opacity-0': imageLoaded.viewer}"
         />
-        <!-- 主图 -->
+        <!-- 主图或视频 -->
+        <template v-if="currentImage?.type === 2">
+          <video
+            :src="currentImage?.url"
+            class="relative z-20 w-auto h-auto max-w-full max-h-[90vh] object-contain"
+            controls
+            autoplay
+            @loadeddata="imageLoaded.viewer = true"
+            @error="handleVideoError"
+          />
+        </template>
         <img 
+          v-else
           :src="currentImage?.url" 
           :alt="currentImage?.name"
           class="relative z-20 w-auto h-auto max-w-full max-h-[90vh] object-contain transition-opacity duration-300"
@@ -105,6 +129,7 @@
         </button>
         <!-- 下载按钮 -->
         <button 
+          v-if="currentImage?.type !== 2"
           class="z-30 fixed bottom-4 right-4 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-300 flex items-center gap-2"
           :class="{'opacity-0': !showControls}"
           @click="downloadImage(currentImage)"
@@ -163,7 +188,7 @@ const { data: albumData, pending } = await useFetch(`/api/alist/list`, {
         // item.thumb不能有illegal字符串
         if (item.thumb.includes('illegal')) {
           return false
-        } else if (item.type !==5){
+        } else if (item.type !==5 && item.type !== 2){
           return false
         } else {
           return true
@@ -175,6 +200,7 @@ const { data: albumData, pending } = await useFetch(`/api/alist/list`, {
             name: item.name,
             url: `https://alist.zzdx.eu.org/d/cmcc/${encodeURIComponent('图床相册')}/${encodeURIComponent(albumName)}/${encodeURIComponent(item.name)}`,
             thumb: item.thumb,
+            type: item.type
           }))
         }
       }
@@ -310,6 +336,12 @@ const openImageViewer = async (image) => {
 // 返回按钮处理函数
 const handleReturn = () => {
   window.history.back()
+}
+
+// 处理视频加载错误
+const handleVideoError = (error) => {
+  console.error('视频加载失败:', error)
+  imageLoaded.value.viewer = true
 }
 
 </script>
