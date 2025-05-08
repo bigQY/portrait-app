@@ -2,7 +2,7 @@
 import tailwindcss from "@tailwindcss/vite";
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
-  ssr: false,
+  ssr: true,
   // CSS 配置
   css: [
     '@/assets/css/main.css',
@@ -19,7 +19,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/image',
     '@nuxtjs/color-mode',
-    "nitro-cloudflare-dev"
+    "nitro-cloudflare-dev",
+    '@nuxtjs/sitemap'
   ],
 
   // 应用配置
@@ -77,6 +78,7 @@ export default defineNuxtConfig({
     },
     routeRules: {
       '/album/**': { 
+        ssr: true,
         swr: true,
         cache: {
           maxAge: 36000 // 360分钟缓存
@@ -89,7 +91,13 @@ export default defineNuxtConfig({
         }
       },
       '/': { 
-        ssr: false,
+        ssr: true,
+        cache: {
+          maxAge: 1800 // 30分钟缓存
+        }
+      },
+      '/page/**': {
+        ssr: true,
         cache: {
           maxAge: 1800 // 30分钟缓存
         }
@@ -126,5 +134,16 @@ export default defineNuxtConfig({
     public: {
       turnstileSiteKey: process.env.TURNSTILE_SITE_KEY
     }
+  },
+  site: { 
+    url: 'https://img.zzdx.eu.org', 
+    name: '写真相册' 
+  },
+
+  // Sitemap 配置
+  sitemap: {
+    sources: [
+      '/api/__sitemap__/urls'
+    ]
   },
 })

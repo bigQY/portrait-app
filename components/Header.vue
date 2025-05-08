@@ -43,5 +43,12 @@ const route = useRoute()
 const isAlbumPage = computed(() => route.path.startsWith('/album/'))
 
 // 青少年模式状态
-const { isTeenModeEnabled, toggleTeenMode } = teenMode
+const { isTeenModeEnabled, toggleTeenMode, syncTeenModeState } = teenMode
+
+// 在客户端挂载后同步状态
+onMounted(() => {
+  if (import.meta.client) {
+    syncTeenModeState()
+  }
+})
 </script>
