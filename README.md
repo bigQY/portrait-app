@@ -1,93 +1,97 @@
 # Portrait Album 相册应用
 
-一个基于 Nuxt.js 开发的在线相册应用，支持图片浏览和相册管理。
+一个现代化的在线相册应用，基于 Nuxt.js 开发，提供优雅的图片浏览体验和便捷的相册管理功能。
 
-## 在线演示
+## ✨ 项目特点
 
-访问 [https://img.zzdx.eu.org/](https://img.zzdx.eu.org/) 查看演示效果
+- 🎯 **简洁优雅** - 采用现代化的 UI 设计，提供流畅的用户体验
+- 🚀 **高性能** - 基于 Nuxt.js 3 的 SSR 架构，确保快速加载和响应
+- 📱 **全端适配** - 完美支持桌面端和移动端，随时随地访问您的相册
+- 🔄 **智能缓存** - 优化的图片加载策略，支持渐进式加载和智能缓存
+- 🔌 **Alist 集成** - 无缝对接 Alist 文件系统，轻松管理您的图片资源
+- ⚡ **边缘计算** - 利用 Cloudflare Workers 提供全球加速服务
 
-## 主要功能
+## 🌐 在线演示
 
-- 🖼️ 相册浏览与管理
-- 📱 响应式设计，支持移动端访问
-- 🚀 图片缓存优化
-- ⚡ 基于 Alist 的文件系统集成
+访问 [https://img.zzdx.eu.org/](https://img.zzdx.eu.org/) 体验完整功能
 
-## 技术栈
+## 🛠️ 技术栈
 
-- Nuxt.js 3
-- Vue 3
-- Alist API 集成
-- Cloudflare Workers（用于边缘计算）
+- **前端框架**: Nuxt.js 3 + Vue 3
+- **文件系统**: Alist API
+- **部署方案**: Cloudflare Workers
+- **构建工具**: Vite
 
-## Setup
+## 🚀 快速开始
 
-Make sure to install dependencies:
+### 环境要求
+
+- Node.js 16.x 或更高版本
+- npm/yarn/pnpm/bun 包管理器
+
+### 安装依赖
 
 ```bash
-# npm
+# 使用 npm
 npm install
 
-# pnpm
+# 或使用 pnpm
 pnpm install
 
-# yarn
+# 或使用 yarn
 yarn install
 
-# bun
+# 或使用 bun
 bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+### 开发环境
 
 ```bash
-# npm
+# 启动开发服务器
 npm run dev
-
-# pnpm
+# 或
 pnpm dev
-
-# yarn
+# 或
 yarn dev
-
-# bun
+# 或
 bun run dev
 ```
 
-## Production
+访问 `http://localhost:3000` 查看开发环境
 
-Build the application for production:
+### 生产部署
 
 ```bash
-# npm
+# 构建生产版本
 npm run build
-
-# pnpm
+# 或
 pnpm build
-
-# yarn
+# 或
 yarn build
-
-# bun
+# 或
 bun run build
-```
 
-Locally preview production build:
-
-```bash
-# npm
+# 预览生产版本
 npm run preview
-
-# pnpm
+# 或
 pnpm preview
-
-# yarn
+# 或
 yarn preview
-
-# bun
+# 或
 bun run preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## 📚 相关文档
+
+- [Nuxt.js 部署文档](https://nuxt.com/docs/getting-started/deployment)
+- [Alist 文档](https://alist.nn.ci/)
+- [Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request 来帮助改进项目。
+
+## 📄 开源协议
+
+本项目采用 MIT 协议开源。
