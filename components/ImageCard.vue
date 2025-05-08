@@ -281,12 +281,12 @@ const loadAndCacheImage = async (retryCount = 0) => {
     console.error('图片加载失败:', error)
     // 最多重试3次
     if (retryCount < 3) {
-      console.log(`重试加载图片 (${retryCount + 1}/3)...`)
-      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
-      return loadAndCacheImage(retryCount + 1)
+      // console.log(`重试加载图片 (${retryCount + 1}/3)...`)
+      // await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+      // return loadAndCacheImage(retryCount + 1)
     } else if (imageRef.value) {
       // 重试失败后使用默认封面图
-      imageRef.value.src = '/img/cover.jpg'
+      // imageRef.value.src = '/img/cover.jpg'
     }
   }
 }

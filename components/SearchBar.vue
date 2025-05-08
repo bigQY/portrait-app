@@ -76,8 +76,7 @@ const debounceSearch = useDebounceFn(() => {
     // 保持当前的查询参数，只更新搜索词
     const query = {
       ...route.query,
-      q: searchQuery.value || undefined,
-      page: searchQuery.value ? '1' : route.query.page // 搜索时重置到第一页
+      q: searchQuery.value || undefined
     }
     
     // 如果搜索词为空，删除q参数
@@ -85,7 +84,9 @@ const debounceSearch = useDebounceFn(() => {
       delete query.q
     }
     
+    // 重置到首页
     navigateTo({
+      path: '/',
       query
     })
   }
