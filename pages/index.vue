@@ -36,24 +36,24 @@
         </div>
 
         <!-- 分页器 -->
-        <div class="mt-8 flex justify-center items-center space-x-2">
+        <div class="mt-8 flex justify-center items-center space-x-1 sm:space-x-2">
           <UButton
             :disabled="currentPage === 1"
             @click="changePage(currentPage - 1)"
-            class="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
+            class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
             variant="ghost"
           >
-            <UIcon name="i-lucide-chevron-left" class="w-5 h-5" />
+            <UIcon name="i-lucide-chevron-left" class="w-4 h-4 sm:w-5 sm:h-5" />
           </UButton>
           
-          <div class="flex space-x-1 relative">
+          <div class="flex space-x-0.5 sm:space-x-1 relative">
             <template v-for="page in displayPages" :key="page">
               <template v-if="page !== '...'">
                 <UButton
                   v-if="page !== currentPage || !showPageInput"
                   :variant="page === currentPage ? 'soft' : 'ghost'"
                   @click="page === currentPage ? showPageInput = true : changePage(page)"
-                  class="w-10 h-10 flex items-center justify-center text-gray-700 dark:text-gray-200 transition-all duration-300 relative group"
+                  class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-700 dark:text-gray-200 transition-all duration-300 relative group text-sm sm:text-base"
                   :class="{
                     'bg-gray-100 dark:bg-gray-800 font-medium': page === currentPage
                   }"
@@ -63,7 +63,7 @@
                     <UIcon 
                       v-if="page === currentPage" 
                       name="i-lucide-pencil" 
-                      class="ml-1  w-3.5 h-3.5 -right-0.5 -top-0.5 transition-opacity duration-200 text-gray-500 dark:text-gray-400" 
+                      class="ml-0.5 sm:ml-1 w-3 h-3 sm:w-3.5 sm:h-3.5 -right-0.5 -top-0.5 transition-opacity duration-200 text-gray-500 dark:text-gray-400" 
                     />
                   </div>
                 </UButton>
@@ -77,24 +77,24 @@
                     v-model="pageInputValue"
                     @blur="handlePageInput"
                     @keyup.enter="handlePageInput"
-                    class="w-10 h-10 text-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    class="w-8 h-8 sm:w-10 sm:h-10 text-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm sm:text-base"
                     :min="1"
                     :max="totalPages"
                     ref="pageInput"
                   />
                 </div>
               </template>
-              <span v-else class="w-10 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400">...</span>
+              <span v-else class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm sm:text-base">...</span>
             </template>
           </div>
 
           <UButton
             :disabled="currentPage === totalPages"
             @click="changePage(currentPage + 1)"
-            class="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
+            class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
             variant="ghost"
           >
-            <UIcon name="i-lucide-chevron-right" class="w-5 h-5" />
+            <UIcon name="i-lucide-chevron-right" class="w-4 h-4 sm:w-5 sm:h-5" />
           </UButton>
         </div>
       </div>

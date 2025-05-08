@@ -64,13 +64,13 @@
         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         rows="3"
       ></textarea>
-      <div class="mt-2 flex items-center justify-between gap-4">
+      <div class="mt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <!-- Turnstile 验证组件 -->
-        <div ref="turnstileContainer" class="cf-turnstile"></div>
+        <div ref="turnstileContainer" class="cf-turnstile w-full sm:w-auto"></div>
         <!-- 发表按钮 -->
         <button
           @click="submitComment"
-          class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          class="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           :disabled="!newComment.trim() || isLoading || !turnstileToken"
         >
           发表评论
@@ -159,6 +159,7 @@ onMounted(async () => {
     script.onload = () => {
       window.turnstile.render(turnstileContainer.value, {
         sitekey: config.public.turnstileSiteKey,
+        size:'flexible',
         callback: (token) => {
           turnstileToken.value = token
         },
@@ -307,4 +308,10 @@ const recordView = async () => {
     console.error('记录浏览量失败：', error)
   }
 }
-</script> 
+</script>
+
+<style scoped>
+.cf-turnstile {
+  width: 100%;
+}
+</style> 
