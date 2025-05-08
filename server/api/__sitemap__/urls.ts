@@ -22,8 +22,8 @@ type Changefreq = 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly
 type Priority = 0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1
 
 export default defineSitemapEventHandler(async () => {
-  // 获取所有相册列表
-  const response = await $fetch<ApiResponse>('/api/alist/albums')
+  // 获取所有相册列表（使用新的 API 端点）
+  const response = await $fetch<ApiResponse>('/api/alist/sitemap-albums')
   const albums = response.data?.items || []
   
   // 生成相册页面的 URL
