@@ -71,15 +71,32 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: "cloudflare-pages",
-
     cloudflare: {
       deployConfig: true,
       nodeCompat: true
     },
     routeRules: {
-      '/album/**': { swr: true },
-      '/': { ssr: false }
-    }
+      '/album/**': { 
+        swr: true,
+        cache: {
+          maxAge: 36000 // 360分钟缓存
+        }
+      },
+      '/api/alist/albums': {
+        cache: {
+          maxAge: 1800,
+          staleMaxAge: 3600
+        }
+      },
+      '/': { 
+        ssr: false,
+        cache: {
+          maxAge: 1800 // 30分钟缓存
+        }
+      }
+    },
+    compressPublicAssets: true,
+    minify: true
   },
 
   // 开发工具配置
@@ -90,6 +107,16 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
+    build: {
+      target: 'esnext',
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: process.env.NODE_ENV === 'production',
+          drop_debugger: true
+        }
+      }
+    },
   },
 
   runtimeConfig: {

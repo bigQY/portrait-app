@@ -182,15 +182,11 @@ const fetchStats = async () => {
 
   try {
     isLoading.value = true
-    const [viewsRes, likesRes, commentsRes] = await Promise.all([
-      $fetch(`/api/album/${encodeURIComponent(props.albumName)}/views`),
-      $fetch(`/api/album/${encodeURIComponent(props.albumName)}/likes`),
-      $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments`)
-    ])
+    const stats = await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/stats`)
     
-    views.value = viewsRes.count
-    likes.value = likesRes.count
-    comments.value = commentsRes.results || []
+    views.value = stats.views
+    likes.value = stats.likes
+    comments.value = stats.comments
   } catch (error) {
     console.error('获取统计数据失败：', error)
   } finally {
@@ -260,7 +256,7 @@ const deleteComment = async (id) => {
 
   try {
     isLoading.value = true
-    const response = await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments`, {
+    await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments`, {
       method: 'DELETE',
       body: { 
         id,

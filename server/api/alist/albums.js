@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
     // 只处理当前页的相册信息
     const cacheKey = `${CACHE_KEY_PREFIX}_page_${page}_${pageSize}_search_${searchQuery}`
-    let pageAlbums = cache.get(cacheKey)
+    let pageAlbums = await cache.get(cacheKey)
 
     if (!pageAlbums) {
       const albumPromises = currentPageDirs.map(async dir => {
@@ -68,8 +68,10 @@ export default defineEventHandler(async (event) => {
       pageAlbums = (await Promise.all(albumPromises))
         .filter(album => album !== null)
 
-      // 将当前页数据存入缓存
-      cache.set(cacheKey, pageAlbums, CACHE_TTL)
+      // 将当前页数据存入缓存（异步操作，不等待完成）
+      cache.set(cacheKey, pageAlbums, CACHE_TTL).catch(error => {
+        console.error('Cache set error:', error)
+      })
     }
 
     return {

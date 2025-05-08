@@ -31,3 +31,17 @@ CREATE TABLE IF NOT EXISTS album_views (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(album_name, fingerprint)
 ); 
+
+-- 创建索引以优化查询性能
+-- 1. 基础索引
+CREATE INDEX idx_album_views_created_at ON album_views(created_at);
+CREATE INDEX idx_album_views_album_name_fingerprint ON album_views(album_name, fingerprint);
+
+-- 2. 复合索引，优化按相册名称和时间范围查询
+CREATE INDEX idx_album_views_album_name_created_at ON album_views(album_name, created_at);
+
+-- 3. 复合索引，优化按指纹和时间范围查询
+CREATE INDEX idx_album_views_fingerprint_created_at ON album_views(fingerprint, created_at);
+
+-- 4. 复合索引，优化按相册名称、指纹和时间范围查询
+CREATE INDEX idx_album_views_album_name_fingerprint_created_at ON album_views(album_name, fingerprint, created_at); 

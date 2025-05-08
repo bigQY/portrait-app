@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   // 获取浏览量
   if (event.method === 'GET') {
     const views = await db.prepare(
-      'SELECT COUNT(*) as count FROM album_views WHERE album_name = ?'
+      'SELECT COUNT(DISTINCT fingerprint) as count FROM album_views WHERE album_name = ? AND created_at > datetime("now", "-10 minutes")'
     ).bind(albumName).first()
     return views
   }
@@ -30,17 +30,24 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    try {
-      await db.prepare(
-        'INSERT INTO album_views (album_name, fingerprint) VALUES (?, ?)'
-      ).bind(albumName, fingerprint).run()
-    } catch (error) {
-      // 如果已经记录过该指纹的访问，忽略错误
+    // 检查10分钟内是否有相同指纹的访问记录
+    const existingView = await db.prepare(
+      'SELECT 1 FROM album_views WHERE album_name = ? AND fingerprint = ? AND created_at > datetime("now", "-10 minutes")'
+    ).bind(albumName, fingerprint).first()
+
+    if (!existingView) {
+      try {
+        await db.prepare(
+          'INSERT INTO album_views (album_name, fingerprint) VALUES (?, ?)'
+        ).bind(albumName, fingerprint).run()
+      } catch (error) {
+        // 如果发生其他错误，忽略
+      }
     }
 
     // 返回最新的浏览量
     const views = await db.prepare(
-      'SELECT COUNT(*) as count FROM album_views WHERE album_name = ?'
+      'SELECT COUNT(DISTINCT fingerprint) as count FROM album_views WHERE album_name = ? AND created_at > datetime("now", "-10 minutes")'
     ).bind(albumName).first()
     return views
   }

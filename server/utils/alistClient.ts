@@ -82,7 +82,7 @@ export class AlistClient {
     const cacheKey = `files_${path}`
     
     // 尝试从缓存获取数据
-    const cachedData = cache.get<any[]>(cacheKey)
+    const cachedData = await cache.get<any[]>(cacheKey)
     if (cachedData) {
       return cachedData
     }
@@ -116,7 +116,9 @@ export class AlistClient {
       }
 
       // 将数据存入缓存，设置30分钟过期
-      cache.set(cacheKey, response.data, 30 * 60 * 1000)
+      cache.set(cacheKey, response.data, 30 * 60 * 1000).catch(error => {
+        console.error('Cache set error:', error)
+      })
       return response.data
     } catch (error) {
       console.error('Error fetching files:', error)
