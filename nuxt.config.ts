@@ -76,35 +76,35 @@ export default defineNuxtConfig({
       deployConfig: true,
       nodeCompat: true
     },
+    compressPublicAssets: false,
     routeRules: {
       '/album/**': { 
-        ssr: true,
-        swr: true,
-        cache: {
+        ssr: process.env.NODE_ENV === 'production',
+        swr: process.env.NODE_ENV === 'production',
+        cache: process.env.NODE_ENV === 'production' ? {
           maxAge: 36000 // 360分钟缓存
-        }
+        } : false
       },
       '/api/alist/albums': {
-        cache: {
+        cache: process.env.NODE_ENV === 'production' ? {
           maxAge: 1800,
           staleMaxAge: 3600
-        }
+        } : false
       },
       '/': { 
-        ssr: true,
-        cache: {
+        ssr: process.env.NODE_ENV === 'production',
+        cache: process.env.NODE_ENV === 'production' ? {
           maxAge: 1800 // 30分钟缓存
-        }
+        } : false
       },
       '/page/**': {
-        ssr: true,
-        cache: {
+        ssr: process.env.NODE_ENV === 'production',
+        cache: process.env.NODE_ENV === 'production' ? {
           maxAge: 1800 // 30分钟缓存
-        }
+        } : false
       }
     },
-    compressPublicAssets: true,
-    minify: true
+    minify: process.env.NODE_ENV === 'production'
   },
 
   // 开发工具配置
@@ -117,14 +117,20 @@ export default defineNuxtConfig({
     ],
     build: {
       target: 'esnext',
-      minify: 'terser',
+      minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
       terserOptions: {
         compress: {
           drop_console: process.env.NODE_ENV === 'production',
-          drop_debugger: true
+          drop_debugger: process.env.NODE_ENV === 'production'
         }
       }
     },
+    server: {
+      hmr: true,
+      watch: {
+        usePolling: true
+      }
+    }
   },
 
   runtimeConfig: {

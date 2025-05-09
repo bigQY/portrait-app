@@ -2,6 +2,8 @@
  * For more details on how to configure Wrangler, refer to:
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
+
+//  wrangler d1 execute portrait_db --file=./server/db/schema.sql
  {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "portrait-app",
@@ -9,5 +11,18 @@
 	"pages_build_output_dir": "./dist",
 	"observability": {
 		"enabled": true
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "portrait_db",
+			"database_id": "80447bd7-347a-4559-a17a-659bb3b3482e"
+		}
+	],
+	"kv_namespaces": [
+		{
+		  "binding": "CACHE_KV",
+		  "id": "6bde0ad961ba4ad1ba0d500d0cb437b0"
+		}
+	]
 }

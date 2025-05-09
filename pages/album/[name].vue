@@ -64,108 +64,13 @@
         <AlbumStats :album-name="albumName" />
       </div>
     </UContainer>
-    <!-- 自定义全屏图片查看器 -->
-    <div v-if="isImageViewerOpen" 
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 transition-all duration-300"
-      @click.self="isImageViewerOpen = false"
-    >
-      <!-- 左右切换按钮 -->
-      <button 
-        v-if="currentImageIndex > 0"
-        class="z-30 fixed left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
-        :class="{'opacity-0': !showControls}"
-        @click="openImageViewer(albumData.data.items[currentImageIndex - 1])"
-      >
-        <UIcon name="i-lucide-chevron-left" class="w-6 h-6"/>
-      </button>
-      <button 
-        v-if="currentImageIndex < albumData.data.items.length - 1"
-        class="z-30 fixed right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
-        :class="{'opacity-0': !showControls}"
-        @click="openImageViewer(albumData.data.items[currentImageIndex + 1])"
-      >
-        <UIcon name="i-lucide-chevron-right" class="w-6 h-6"/>
-      </button>
-      <div class="relative max-w-[90vw] max-h-[90vh] transition-transform duration-300" :class="{'scale-95': !imageLoaded.viewer, 'scale-100': imageLoaded.viewer}" @click="toggleControls">
-        <!-- 缩略图作为背景 -->
-        <img 
-          v-if="currentImage?.type !== 2"
-          :src="currentImage?.thumb" 
-          :alt="currentImage?.name"
-          class="z-10 absolute inset-0 w-full h-full object-contain blur-sm opacity-50 transition-opacity duration-300"
-          :class="{'opacity-50': !imageLoaded.viewer, 'opacity-0': imageLoaded.viewer}"
-        />
-        <!-- 主图或视频 -->
-        <template v-if="currentImage?.type === 2">
-          <video
-            :src="currentImage?.url"
-            class="relative z-20 w-auto h-auto max-w-full max-h-[90vh] object-contain"
-            controls
-            autoplay
-            @loadeddata="imageLoaded.viewer = true"
-            @error="handleVideoError"
-          />
-        </template>
-        <img 
-          v-else
-          :src="currentImage?.url" 
-          :alt="currentImage?.name"
-          class="relative z-20 w-auto h-auto max-w-full max-h-[90vh] object-contain transition-opacity duration-300"
-          :class="{'opacity-0': !imageLoaded.viewer, 'opacity-100': imageLoaded.viewer}"
-          @error="$event.target.src = '/img/cover.jpg'"
-          @load="imageLoaded.viewer = true"
-        />
-        <!-- 加载进度条 -->
-        <div v-if="!imageLoaded.viewer" class="z-30 absolute bottom-0 left-0 right-0 h-1 bg-gray-700 overflow-hidden">
-          <div class="h-full bg-white animate-progress-indeterminate"></div>
-        </div>
-        <!-- 控制按钮 -->
-        <button 
-          class="z-30 fixed top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
-          :class="{'opacity-0': !showControls}"
-          @click="isImageViewerOpen = false"
-        >
-          <UIcon name="i-lucide-x" class="w-6 h-6"/>
-        </button>
-        <!-- 下载按钮 -->
-        <button 
-          v-if="currentImage?.type !== 2"
-          class="z-30 fixed bottom-4 right-4 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-300 flex items-center gap-2"
-          :class="{'opacity-0': !showControls}"
-          @click="downloadImage(currentImage)"
-        >
-          <UIcon name="i-lucide-download" class="w-5 h-5"/>
-          <span>下载原图</span>
-        </button>
-      </div>
-        <!-- 底部预览图 -->
-        <div class="z-30 fixed bottom-0 left-0 right-0 bg-black/50 transition-all duration-300 overflow-hidden pb-4" :class="{'opacity-0': !showControls}">
-          <div 
-            class="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar w-full max-w-screen-2xl mx-auto" 
-            style="scroll-behavior: smooth;"
-            @wheel.prevent="handleMouseWheel"
-            @mousedown="handleDragStart"
-            @mousemove="handleDragMove"
-            @mouseup="handleDragEnd"
-            @mouseleave="handleDragEnd"
-            ref="previewContainer"
-          >
-            <div 
-              v-for="(image, index) in albumData.data.items" 
-              :key="image.name"
-              @click="openImageViewer(image)"
-              class="flex-shrink-0 w-12 h-12 rounded overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-110"
-              :class="{'ring-2 ring-white': image.name === currentImage.name}"
-            >
-              <img 
-                :src="image.thumb" 
-                :alt="image.name"
-                class="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-    </div>
+
+    <!-- 使用新的图片查看器组件 -->
+    <ImageViewer
+      v-model="isImageViewerOpen"
+      :images="albumData?.data?.items || []"
+      :initial-image="currentImage"
+    />
   </div>
 </template>
 
@@ -230,128 +135,17 @@ watch(albumData, () => {
 // 图片查看器状态
 const isImageViewerOpen = ref(false)
 const currentImage = ref(null)
-const currentImageIndex = ref(0)
-const showControls = ref(true)
-
-// 切换控制按钮显示状态
-const toggleControls = () => {
-  showControls.value = !showControls.value
-}
-
-// 预览图容器引用
-const previewContainer = ref(null)
-
-// 拖动状态
-const isDragging = ref(false)
-const startX = ref(0)
-const scrollLeft = ref(0)
-
-// 处理鼠标滚轮事件
-const handleMouseWheel = (e) => {
-  if (previewContainer.value) {
-    previewContainer.value.scrollLeft += e.deltaY
-  }
-}
-
-// 处理拖动开始
-const handleDragStart = (e) => {
-  isDragging.value = true
-  startX.value = e.pageX - previewContainer.value.offsetLeft
-  scrollLeft.value = previewContainer.value.scrollLeft
-}
-
-// 处理拖动移动
-const handleDragMove = (e) => {
-  if (!isDragging.value) return
-  e.preventDefault()
-  const x = e.pageX - previewContainer.value.offsetLeft
-  const walk = (x - startX.value) * 2
-  previewContainer.value.scrollLeft = scrollLeft.value - walk
-}
-
-// 处理拖动结束
-const handleDragEnd = () => {
-  isDragging.value = false
-}
-
-// 监听当前图片变化，自动滚动到可视区域
-watch(currentImageIndex, () => {
-  nextTick(() => {
-    const container = previewContainer.value
-    if (!container) return
-    
-    const thumbnails = container.children
-    if (currentImageIndex.value >= 0 && currentImageIndex.value < thumbnails.length) {
-      const thumbnail = thumbnails[currentImageIndex.value]
-      const containerWidth = container.offsetWidth
-      const thumbnailLeft = thumbnail.offsetLeft
-      const thumbnailWidth = thumbnail.offsetWidth
-      
-      // 计算目标滚动位置，使当前缩略图居中
-      const targetScroll = thumbnailLeft - (containerWidth / 2) + (thumbnailWidth / 2)
-      container.scrollTo({
-        left: targetScroll,
-        behavior: 'smooth'
-      })
-    }
-  })
-})
-
-// 下载图片
-const downloadImage = async (image) => {
-  try {
-    const response = await fetch(image.url)
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = image.name
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
-  } catch (error) {
-    console.error('下载失败:', error)
-  }
-}
 
 // 打开图片查看器
-const openImageViewer = async (image) => {
-  imageLoaded.value.viewer = false
+const openImageViewer = (image) => {
   currentImage.value = image
   isImageViewerOpen.value = true
-  // 设置当前图片索引
-  currentImageIndex.value = albumData.value.data.items.findIndex(item => item.name === image.name)
-
-  try {
-    currentImage.value = image
-    imageLoaded.value.viewer = true
-  } catch (error) {
-    console.error('大图加载失败:', error)
-    currentImage.value = { ...image, url: '/img/cover.jpg' }
-    imageLoaded.value.viewer = true
-  }
 }
 
 // 返回按钮处理函数
 const handleReturn = () => {
   window.history.back()
 }
-
-// 处理视频加载错误
-const handleVideoError = (error) => {
-  console.error('视频加载失败:', error)
-  imageLoaded.value.viewer = true
-}
-
-watch(isImageViewerOpen, (val) => {
-  if (val) {
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
-  }
-})
-
 </script>
 
 <style>

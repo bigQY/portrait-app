@@ -28,7 +28,7 @@ export default defineSitemapEventHandler(async () => {
   
   // 生成相册页面的 URL
   const albumUrls = albums.map((album) => ({
-    loc: `/album/${encodeURIComponent(album.id)}`,
+    loc: `/album/${album.id}`,
     lastmod: album.updated_at || new Date().toISOString(),
     changefreq: 'daily' as Changefreq,
     priority: 0.8 as Priority,
