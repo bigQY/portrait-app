@@ -74,15 +74,19 @@ export default defineEventHandler(async (event) => {
 
   // 删除评论
   if (event.method === 'DELETE') {
-    const { id, fingerprint } = await readBody(event)
-    if (!id || !fingerprint) {
-      throw createError({
-        statusCode: 400,
-        message: '评论ID和指纹不能为空'
-      })
-    }
-
     try {
+      // 从查询字符串中获取参数
+      const query = getQuery(event)
+      const id = query.id
+      const fingerprint = query.fingerprint
+      
+      if (!id || !fingerprint) {
+        throw createError({
+          statusCode: 400,
+          message: '评论ID和指纹不能为空'
+        })
+      }
+
       // 先检查评论是否存在且属于该用户
       const comment = await db.prepare(
         'SELECT * FROM album_comments WHERE id = ? AND album_name = ? AND fingerprint = ?'
@@ -102,7 +106,6 @@ export default defineEventHandler(async (event) => {
 
       return { success: true, message: '评论删除成功' }
     } catch (error) {
-      console.error('删除评论失败：', error)
       throw createError({
         statusCode: 500,
         message: '删除评论失败，请稍后重试'

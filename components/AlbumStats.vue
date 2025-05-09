@@ -257,17 +257,20 @@ const deleteComment = async (id) => {
 
   try {
     isLoading.value = true
-    await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments`, {
-      method: 'DELETE',
-      body: { 
-        id,
-        fingerprint: fingerprint.value
-      }
+    const response = await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/comments?id=${id}&fingerprint=${encodeURIComponent(fingerprint.value)}`, {
+      method: 'DELETE'
     })
     
-    await fetchStats()
+    if (response.success) {
+      // 直接从本地状态中移除评论
+      comments.value = comments.value.filter(comment => comment.id !== id)
+      await fetchStats()
+    } else {
+      throw new Error(response.message || '删除评论失败')
+    }
   } catch (error) {
     console.error('删除评论失败：', error)
+    alert(error.message || '删除评论失败，请稍后重试')
   } finally {
     isLoading.value = false
   }
