@@ -344,6 +344,14 @@ const handleVideoError = (error) => {
   imageLoaded.value.viewer = true
 }
 
+watch(isImageViewerOpen, (val) => {
+  if (val) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
+
 </script>
 
 <style>

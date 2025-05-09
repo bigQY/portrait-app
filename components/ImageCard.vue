@@ -250,23 +250,27 @@ const loadAndCacheImage = async (retryCount = 0) => {
   if (props.src === '/img/cover.jpg' || !imageRef.value) return
 
   // 生成缓存key
-  let cacheKey
-  if (props.cacheKey) {
-    cacheKey = props.cacheKey
-  } else {
-    const urlParts = props.src.split('/cmcc/')
-    cacheKey = urlParts[1] // 使用相对路径作为key
+  let cacheKey = props.cacheKey
+  if (!cacheKey) {
+    // 使用完整的URL作为key，但移除查询参数和哈希
+    const url = new URL(props.src, window.location.origin)
+    cacheKey = url.pathname
   }
 
-  if (!cacheKey) return
+  if (!cacheKey) {
+    console.error('无法生成缓存key:', props.src)
+    return
+  }
 
   try {
     // 尝试从缓存获取
     const cachedImage = await imageCache.getImage(`thumb_${cacheKey}`)
     if (cachedImage && imageRef.value) {
+      console.log('从缓存加载图片:', cacheKey)
       imageRef.value.src = cachedImage
     } else if (imageRef.value) {
       // 从网络加载并缓存
+      console.log('从网络加载图片:', cacheKey)
       const base64Data = await convertImageToBase64(props.src)
       await imageCache.saveImage(`thumb_${cacheKey}`, base64Data)
       imageRef.value.src = base64Data
@@ -275,12 +279,12 @@ const loadAndCacheImage = async (retryCount = 0) => {
     console.error('图片加载失败:', error)
     // 最多重试3次
     if (retryCount < 3) {
-      // console.log(`重试加载图片 (${retryCount + 1}/3)...`)
-      // await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
-      // return loadAndCacheImage(retryCount + 1)
+      console.log(`重试加载图片 (${retryCount + 1}/3)...`)
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+      return loadAndCacheImage(retryCount + 1)
     } else if (imageRef.value) {
       // 重试失败后使用默认封面图
-      // imageRef.value.src = '/img/cover.jpg'
+      imageRef.value.src = '/img/cover.jpg'
     }
   }
 }
