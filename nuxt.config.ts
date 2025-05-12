@@ -81,7 +81,8 @@ export default defineNuxtConfig({
         ssr: process.env.NODE_ENV === 'production',
         swr: process.env.NODE_ENV === 'production',
         cache: process.env.NODE_ENV === 'production' ? {
-          maxAge: 36000 // 360分钟缓存
+          swr: true, // 启用 SWR 缓存
+          maxAge: 12 * 60 * 60 // 360分钟缓存
         } : false
       },
       '/api/alist/albums': {
