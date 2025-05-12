@@ -9,12 +9,13 @@ declare global {
   }
 }
 
-
 export class Cache {
   private static instance: Cache;
   private cache: Map<string, CacheItem<any>>;
-  private readonly defaultTTL: number =3 * 60 * 60 * 1000; // 3 hours
-  private readonly cfTTL: number = 23 * 60 * 60; // 12 hours
+  // Set default TTL to 12 hours for memory cache
+  private readonly defaultTTL: number = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+  // Set Cloudflare KV TTL to 12 hours
+  private readonly cfTTL: number = 12 * 60 * 60; // 12 hours in seconds
 
   private constructor() {
     this.cache = new Map();
@@ -28,14 +29,13 @@ export class Cache {
   }
 
   async set(key: string, value: any, ttl: number = this.defaultTTL): Promise<void> {
-    if (ttl > this.defaultTTL) {
-      ttl = this.defaultTTL;
-    }
-    
+    // The 'ttl' parameter is for memory cache.
+    // The 'this.cfTTL' is for KV cache.
+
     // 设置内存缓存
     this.cache.set(key, {
       value,
-      timestamp: Date.now() + ttl
+      timestamp: Date.now() + ttl // Use the provided or default TTL for memory
     });
 
     // 设置 Cloudflare KV 缓存
@@ -58,8 +58,11 @@ export class Cache {
       const kvValue = await global.__env__.CACHE_KV.get(key);
       if (kvValue) {
         const parsedValue = JSON.parse(kvValue) as T;
-        // 将 KV 中的值重新设置到内存缓存中
-        this.set(key, parsedValue);
+        // 将 KV 中的值重新设置到内存缓存中, 使用 defaultTTL (12 hours)
+        this.cache.set(key, {
+          value: parsedValue,
+          timestamp: Date.now() + this.defaultTTL
+        });
         return parsedValue;
       }
     } catch (error) {
