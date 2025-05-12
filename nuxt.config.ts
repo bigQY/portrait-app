@@ -74,7 +74,6 @@ export default defineNuxtConfig({
     preset: "cloudflare-pages",
     cloudflare: {
       deployConfig: true,
-      nodeCompat: true
     },
     compressPublicAssets: false,
     routeRules: {
@@ -135,14 +134,19 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // 私有密钥，仅在服务器端可用
-    turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY,
+    turnstileSecretKey: process.env.NODE_ENV === 'development' 
+      ? '1x0000000000000000000000000000000AA'
+      : process.env.TURNSTILE_SECRET_KEY,
     // 公共密钥，在客户端和服务器端都可用
     public: {
-      turnstileSiteKey: process.env.TURNSTILE_SITE_KEY
+      turnstileSiteKey: process.env.NODE_ENV === 'development'
+        ? '1x00000000000000000000AA'
+        : process.env.TURNSTILE_SITE_KEY
     }
   },
+
   site: { 
-    url: 'https://img.zzdx.eu.org', 
+    url: 'https://hpic.me', 
     name: '写真相册' 
   },
 
