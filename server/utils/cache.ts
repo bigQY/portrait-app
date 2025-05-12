@@ -13,8 +13,8 @@ declare global {
 export class Cache {
   private static instance: Cache;
   private cache: Map<string, CacheItem<any>>;
-  private readonly defaultTTL: number = 10 * 60 * 1000; // 10 minutes
-  private readonly cfTTL: number = 29 * 60; // 29 minutes in seconds
+  private readonly defaultTTL: number =3 * 60 * 60 * 1000; // 3 hours
+  private readonly cfTTL: number = 23 * 60 * 60; // 12 hours
 
   private constructor() {
     this.cache = new Map();

@@ -116,7 +116,7 @@ export class AlistClient {
       }
 
       // 将数据存入缓存，设置30分钟过期
-      cache.set(cacheKey, response.data, 30 * 60 * 1000).catch(error => {
+      cache.set(cacheKey, response.data,12 * 60 * 60 * 1000).catch(error => {
         console.error('Cache set error:', error)
       })
       return response.data

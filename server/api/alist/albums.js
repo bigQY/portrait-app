@@ -3,7 +3,7 @@ import { cache } from '~/server/utils/cache'
 
 const DEFAULT_PAGE_SIZE = 10
 const CACHE_KEY_PREFIX = 'albums_list'
-const CACHE_TTL = 1 * 60 * 1000 // 10分钟缓存
+const CACHE_TTL = 12 * 60 * 60 * 1000 // 10分钟缓存
 
 export default defineEventHandler(async (event) => {
   try {
