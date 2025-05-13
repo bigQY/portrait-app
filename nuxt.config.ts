@@ -12,6 +12,46 @@ const locales = [
     code: 'en',
     name: 'English',
     file: 'en-US.json'
+  },
+  {
+    code: 'fr',
+    name: 'Français',
+    file: 'fr-FR.json'
+  },
+  {
+    code: 'de',
+    name: 'Deutsch',
+    file: 'de-DE.json'
+  },
+  {
+    code: 'es',
+    name: 'Español',
+    file: 'es-ES.json'
+  },
+  {
+    code: 'ja',
+    name: '日本語',
+    file: 'ja-JP.json'
+  },
+  {
+    code: 'ko',
+    name: '한국어',
+    file: 'ko-KR.json'
+  },
+  {
+    code: 'ru',
+    name: 'Русский',
+    file: 'ru-RU.json'
+  },
+  {
+    code: 'pt',
+    name: 'Português',
+    file: 'pt-PT.json'
+  },
+  {
+    code: 'it',
+    name: 'Italiano',
+    file: 'it-IT.json'
   }
 ]
 

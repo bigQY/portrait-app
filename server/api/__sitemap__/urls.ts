@@ -37,68 +37,51 @@ export default defineSitemapEventHandler(async () => {
   const allLocalizedUrls: SitemapUrl[] = [];
 
   // Fetch all albums (using the new API endpoint)
-  const response = await $fetch<ApiResponse>('/api/alist/sitemap-albums')
-  const albums = response.data?.items || []
+  const response = await $fetch<ApiResponse>('/api/alist/sitemap-albums');
+  const albums = response.data?.items || [];
   
-  // Generate album page URLs (for each language)
-  albums.forEach((album) => {
-    const basePath = `/album/${album.id}`;
-    i18nConfig.locales.forEach((locale: { code: string }) => { // Added type for locale
-      let loc = basePath;
-      if (i18nConfig.strategy === 'prefix_except_default') {
-        if (locale.code !== i18nConfig.defaultLocale) {
-          loc = `/${locale.code}${basePath}`;
-        }
-      }
-      // TODO: Add logic for other strategies like 'prefix' if needed in the future
+  const totalItems = response.data?.pagination?.total || 0;
+  const itemsPerPage = response.data?.pagination?.per_page || 1; // Avoid division by zero
+  const totalPages = itemsPerPage > 0 ? Math.ceil(totalItems / itemsPerPage) : 1;
 
+  const staticBasePaths = ['/rankings'];
+
+  i18nConfig.locales.forEach((locale: { code: string }) => {
+    const isDefaultLocale = locale.code === i18nConfig.defaultLocale;
+    let prefix = '';
+    if (i18nConfig.strategy === 'prefix_except_default' && !isDefaultLocale) {
+      prefix = `/${locale.code}`;
+    } else if (i18nConfig.strategy === 'prefix') {
+      prefix = `/${locale.code}`;
+    }
+
+    // Album page URLs
+    albums.forEach((album) => {
+      const basePath = `/album/${album.id}`;
       allLocalizedUrls.push({
-        loc,
+        loc: `${prefix}${basePath}`,
         lastmod: album.updated_at || new Date().toISOString(),
         changefreq: 'daily',
         priority: 0.8
       });
     });
-  });
 
-  // Generate homepage pagination URLs (for each language)
-  const totalItems = response.data?.pagination?.total || 0;
-  const itemsPerPage = response.data?.pagination?.per_page || 1; // Avoid division by zero
-  const totalPages = itemsPerPage > 0 ? Math.ceil(totalItems / itemsPerPage) : 1;
-
-  for (let i = 0; i < totalPages; i++) {
-    const basePath = i === 0 ? '/' : `/page/${i + 1}`;
-    i18nConfig.locales.forEach((locale: { code: string }) => { // Added type for locale
-      let loc = basePath;
-      if (i18nConfig.strategy === 'prefix_except_default') {
-        if (locale.code !== i18nConfig.defaultLocale) {
-          loc = `/${locale.code}${basePath === '/' ? '' : basePath}`;
-        }
-      }
-      // TODO: Add logic for other strategies
-
+    // Homepage pagination URLs
+    for (let i = 0; i < totalPages; i++) {
+      const pagePath = i === 0 ? '/' : `/page/${i + 1}`;
+      // Adjust loc for root path when prefix exists, ensuring it doesn't become '//' or '/prefix//'
+      const loc = pagePath === '/' ? (prefix || '/') : `${prefix}${pagePath}`;
       allLocalizedUrls.push({
         loc,
         changefreq: 'daily',
         priority: (i === 0 ? 1.0 : 0.9)
       });
-    });
-  }
+    }
 
-  // Add other static pages (for each language)
-  const staticBasePaths = ['/rankings'];
-  staticBasePaths.forEach(basePath => {
-    i18nConfig.locales.forEach((locale: { code: string }) => { // Added type for locale
-      let loc = basePath;
-      if (i18nConfig.strategy === 'prefix_except_default') {
-        if (locale.code !== i18nConfig.defaultLocale) {
-          loc = `/${locale.code}${basePath}`;
-        }
-      }
-      // TODO: Add logic for other strategies
-
+    // Add other static pages
+    staticBasePaths.forEach(basePath => {
       allLocalizedUrls.push({
-        loc,
+        loc: `${prefix}${basePath}`,
         changefreq: 'daily',
         priority: 0.9
       });
