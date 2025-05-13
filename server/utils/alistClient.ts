@@ -75,7 +75,7 @@ export class AlistClient {
   }
 
   public async getFiles(path: string): Promise<any[]> {
-    const cacheKey = `files_${path}`
+    const cacheKey = `files${path}`
     const cachedData = await cache.get<any[]>(cacheKey)
     if (cachedData) {
       return cachedData
@@ -123,6 +123,7 @@ export class AlistClient {
         // Store in cache using default TTL (12 hours) from cache.ts
         // The cache.set method in cache.ts already handles its own error logging for KV.
         await cache.set(cacheKey, response.data)
+        console.log(`Cache set for key "${cacheKey}"`)
         return response.data
       } catch (error: any) {
         console.error(`Error in getFiles for path "${path}": ${error.message}`)

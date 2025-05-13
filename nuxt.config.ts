@@ -138,6 +138,8 @@ export default defineNuxtConfig({
     turnstileSecretKey: process.env.NODE_ENV === 'development' 
       ? '1x0000000000000000000000000000000AA'
       : process.env.TURNSTILE_SECRET_KEY,
+    upstashRedisUrl: process.env.UPSTASH_REDIS_URL,
+    upstashRedisToken: process.env.UPSTASH_REDIS_TOKEN,
     // 公共密钥，在客户端和服务器端都可用
     public: {
       turnstileSiteKey: process.env.NODE_ENV === 'development'
