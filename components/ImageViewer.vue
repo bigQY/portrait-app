@@ -13,27 +13,27 @@
   > 
     <!-- 顶部控制按钮 -->
     <div class="fixed top-4 right-4 flex items-center gap-4 z-30" @click.stop @touchstart.stop @touchmove.stop @touchend.stop>
-      <UTooltip text="关闭">
+      <UTooltip :text="$t('close')">
         <button 
-          class="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
+          class="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-300 flex items-center justify-center"
           :class="{'opacity-0': !showControls}"
           @click="close"
         >
           <UIcon name="i-lucide-x" class="w-6 h-6"/>
         </button>
       </UTooltip>
-      <UTooltip v-if="currentImage?.type !== 2" text="下载原图">
+      <UTooltip v-if="currentImage?.type !== 2" :text="$t('downloadOriginalImage')">
         <button 
-          class="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
+          class="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-300 flex items-center justify-center"
           :class="{'opacity-0': !showControls}"
           @click="downloadImage"
         >
           <UIcon name="i-lucide-download" class="w-6 h-6"/>
         </button>
       </UTooltip>
-      <UTooltip v-if="currentImage?.type !== 2" :text="isZoomed ? '恢复原状' : '放大'">
+      <UTooltip v-if="currentImage?.type !== 2" :text="isZoomed ? $t('restore') : $t('zoomIn')">
         <button 
-          class="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
+          class="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-300 flex items-center justify-center"
           :class="{'opacity-0': !showControls}"
           @click="toggleZoom"
         >
@@ -45,7 +45,7 @@
     <!-- 左右切换按钮 -->
     <button 
       v-if="currentIndex > 0"
-      class="z-30 fixed left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
+      class="z-30 fixed left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-300 flex items-center justify-center"
       :class="{'opacity-0': !showControls}"
       @click.stop="prev"
       @touchstart.stop
@@ -56,7 +56,7 @@
     </button>
     <button 
       v-if="currentIndex < images.length - 1"
-      class="z-30 fixed right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-200 flex items-center justify-center transition-opacity duration-300"
+      class="z-30 fixed right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors duration-300 flex items-center justify-center"
       :class="{'opacity-0': !showControls}"
       @click.stop="next"
       @touchstart.stop
@@ -137,7 +137,7 @@
           <!-- 加载指示器 -->
           <div v-if="!imageLoaded" class="absolute -bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
             <div class="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-            <span class="text-white text-sm">大图加载中...</span>
+            <span class="text-white text-sm">{{ $t('loadingLargeImage') }}</span>
           </div>
         </div>
       </template>
@@ -176,6 +176,9 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
+
 const props = defineProps({
   modelValue: Boolean,
   images: {
@@ -291,7 +294,7 @@ const downloadImage = async () => {
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
   } catch (error) {
-    console.error('下载失败:', error)
+    console.error(t('downloadFailed'), error)
   }
 }
 
@@ -318,7 +321,7 @@ const next = () => {
 
 // 处理视频加载错误
 const handleVideoError = (error) => {
-  console.error('视频加载失败:', error)
+  console.error(t('videoLoadFailed'), error)
   imageLoaded.value = true
 }
 
@@ -537,6 +540,7 @@ watch(currentImage, () => {
   isTouching.value = false
   isPinching.value = false
 })
+
 </script>
 
 <style>
@@ -553,4 +557,4 @@ watch(currentImage, () => {
   user-select: none;
   -webkit-user-select: none;
 }
-</style> 
+</style>

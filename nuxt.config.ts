@@ -1,5 +1,20 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import tailwindcss from "@tailwindcss/vite";
+
+//locales
+const locales = [
+  {
+    code: 'zh',
+    name: '简体中文',
+    file: 'zh-CN.json'
+  },
+  {
+    code: 'en',
+    name: 'English',
+    file: 'en-US.json'
+  }
+]
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   ssr: true,
@@ -19,8 +34,9 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/image',
     '@nuxtjs/color-mode',
-    "nitro-cloudflare-dev",
-    '@nuxtjs/sitemap'
+    'nitro-cloudflare-dev',
+    '@nuxtjs/sitemap',
+    '@nuxtjs/i18n'
   ],
 
   // 应用配置
@@ -144,7 +160,10 @@ export default defineNuxtConfig({
     public: {
       turnstileSiteKey: process.env.NODE_ENV === 'development'
         ? '1x00000000000000000000AA'
-        : process.env.TURNSTILE_SITE_KEY
+        : process.env.TURNSTILE_SITE_KEY,
+      i18n:{
+        locales: locales
+      }
     }
   },
 
@@ -159,4 +178,20 @@ export default defineNuxtConfig({
       '/api/__sitemap__/urls'
     ]
   },
+  i18n: {
+    locales: locales,
+    defaultLocale: 'zh',
+    lazy: true,
+    langDir: 'locales/', // 指定语言文件目录
+    strategy: 'prefix_except_default', // 路由策略：除默认语言外，其他语言添加前缀 (e.g., /en/about)
+    detectBrowserLanguage: { // 浏览器语言检测配置
+      useCookie: true, // 使用 cookie 存储用户选择的语言
+      cookieKey: 'i18n_redirected', // cookie 名称
+      alwaysRedirect: false, // 仅在根路径且未指定语言时重定向
+      redirectOn: 'root', // 'root' - 仅在访问根路径时检测并重定向
+    },
+    experimental:{
+      switchLocalePathLinkSSR: true // 启用 SSR 支持的语言切换链接
+    }
+  }
 })

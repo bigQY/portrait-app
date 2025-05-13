@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <UContainer>
       <div class="py-8">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-8">排行榜</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-8">{{ $t('rankings') }}</h1>
 
         <!-- 排行榜类型切换 -->
         <div class="flex gap-4 mb-6">
@@ -16,7 +16,7 @@
               : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'"
             :disabled="isLoading"
           >
-            {{ type.label }}
+            {{ $t(type.labelKey) }}
           </button>
         </div>
 
@@ -61,24 +61,24 @@
                 <div class="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
                   <span class="flex items-center gap-1">
                     <UIcon name="i-lucide-eye" class="w-4 h-4"/>
-                    {{ album.views }} 次浏览
+                    {{ $t('viewsUnit', { count: album.views }) }}
                   </span>
                   <span class="flex items-center gap-1">
                     <UIcon name="i-lucide-heart" class="w-4 h-4"/>
-                    {{ album.likes }} 个赞
+                    {{ $t('likesUnit', { count: album.likes }) }}
                   </span>
                   <span class="flex items-center gap-1">
                     <UIcon name="i-lucide-message-square" class="w-4 h-4"/>
-                    {{ album.comments }} 条评论
+                    {{ $t('commentsUnit', { count: album.comments }) }}
                   </span>
                 </div>
               </div>
               <!-- 查看按钮 -->
               <button
-                @click="$router.push(`/album/${album.album_name}`)"
+                @click="navigateToAlbum(album.album_name)"
                 class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200"
               >
-                查看
+                {{ $t('viewButton') }}
               </button>
             </div>
           </div>
@@ -90,11 +90,13 @@
 
 <script setup>
 import { computed } from 'vue'
+const { t } = useI18n()
+const localePath = useLocalePath()
 
 const rankingTypes = [
-  { label: '浏览量排行', value: 'views' },
-  { label: '点赞排行', value: 'likes' },
-  { label: '评论排行', value: 'comments' }
+  { labelKey: 'viewRankings', value: 'views' },
+  { labelKey: 'likeRankings', value: 'likes' },
+  { labelKey: 'commentRankings', value: 'comments' }
 ]
 
 const currentType = ref('views')
@@ -129,8 +131,14 @@ const changeRankingType = async (type) => {
   }
 }
 
+// 跳转到相册详情页
+const navigateToAlbum = (albumName) => {
+  const decodedAlbumName = decodeURIComponent(albumName)
+  navigateTo(localePath({ name: 'album-name', params: { name: decodedAlbumName } }))
+}
+
 // 初始化
 onMounted(() => {
   refresh()
 })
-</script> 
+</script>

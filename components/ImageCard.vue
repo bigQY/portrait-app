@@ -16,13 +16,13 @@
       <div class="bg-white dark:bg-gray-800 p-3 rounded-lg text-center shadow-lg">
         <template v-if="isChecking">
           <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-blue-500 mx-auto mb-2 animate-spin" />
-          <p class="text-sm font-medium text-gray-900 dark:text-white">正在检测</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">请稍候...</p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $t('detecting') }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('pleaseWait') }}</p>
         </template>
         <template v-else>
           <UIcon name="i-lucide-shield-alert" class="w-6 h-6 text-red-500 mx-auto mb-2" />
-          <p class="text-sm font-medium text-gray-900 dark:text-white">内容已保护</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">青少年模式已开启</p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $t('contentProtected') }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('teenModeEnabledMessage') }}</p>
         </template>
       </div>
     </div>
@@ -48,6 +48,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useImageCache } from '../composables/useImageCache'
 import teenMode from '../composables/useTeenMode'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   src: string
@@ -74,7 +75,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'load', event: Event): void
-  (e: 'error', event: Event): void
+  (e: 'error', event: Event | string): void // 修正 error 事件的类型
 }>()
 
 const isLoaded = ref(false)
@@ -84,6 +85,7 @@ const isChecking = ref(false)
 const { getCache } = useImageCache()
 const imageCache = getCache()
 const { isTeenModeEnabled, getNSFWModel } = teenMode
+const { t } = useI18n()
 
 // 添加状态控制骨架屏显示
 const shouldShowSkeleton = ref(false)
@@ -128,7 +130,7 @@ const checkImageContent = async () => {
 
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve()
-      img.onerror = () => reject(new Error('图片加载失败'))
+      img.onerror = () => reject(new Error(t('imageLoadFailed')))
       img.src = imageUrl
     })
 
@@ -155,7 +157,7 @@ const checkImageContent = async () => {
     localStorage.setItem(cacheKey, JSON.stringify(cacheData))
 
   } catch (error) {
-    console.error('NSFW检测失败:', error)
+    console.error(t('detecting') + 'NSFW检测失败:', error)
     isNSFW.value = false
   } finally {
     isChecking.value = false
@@ -210,7 +212,7 @@ const convertImageToBase64 = (url: string): Promise<string> => {
     // 设置加载超时
     const timeout = setTimeout(() => {
       img.src = ''
-      reject(new Error('图片加载超时'))
+      reject(new Error(t('imageLoadTimeout')))
     }, 15000)
 
     img.onload = () => {
@@ -221,13 +223,13 @@ const convertImageToBase64 = (url: string): Promise<string> => {
         canvas.height = img.height
         const ctx = canvas.getContext('2d')
         if (!ctx) {
-          reject(new Error('无法创建canvas上下文'))
+          reject(new Error(t('canvasContextError')))
           return
         }
         ctx.drawImage(img, 0, 0)
         const base64Data = canvas.toDataURL('image/jpeg')
         if (!base64Data || base64Data === 'data:,') {
-          reject(new Error('图片数据转换失败'))
+          reject(new Error(t('imageDataConversionFailed')))
           return
         }
         resolve(base64Data)
@@ -238,7 +240,7 @@ const convertImageToBase64 = (url: string): Promise<string> => {
 
     img.onerror = (error: Event) => {
       clearTimeout(timeout)
-      reject(new Error(`图片加载失败: ${error instanceof Error ? error.message : '未知错误'}`))
+      reject(new Error(`${t('imageLoadFailed')} ${error instanceof Error ? error.message : t('unknownError')}`))
     }
 
     img.src = url
@@ -258,7 +260,7 @@ const loadAndCacheImage = async (retryCount = 0) => {
   }
 
   if (!cacheKey) {
-    console.error('无法生成缓存key:', props.src)
+    console.error(t('cacheKeyGenerationFailed'), props.src)
     return
   }
 
@@ -266,17 +268,17 @@ const loadAndCacheImage = async (retryCount = 0) => {
     // 尝试从缓存获取
     const cachedImage = await imageCache.getImage(`thumb_${cacheKey}`)
     if (cachedImage && imageRef.value) {
-      console.log('从缓存加载图片:', cacheKey)
+      console.log(t('loadImageFromCache'), cacheKey)
       imageRef.value.src = cachedImage
     } else if (imageRef.value) {
       // 从网络加载并缓存
-      console.log('从网络加载图片:', cacheKey)
+      console.log(t('loadImageFromNetwork'), cacheKey)
       const base64Data = await convertImageToBase64(props.src)
       await imageCache.saveImage(`thumb_${cacheKey}`, base64Data)
       imageRef.value.src = base64Data
     }
   } catch (error) {
-    console.error('图片加载失败:', error)
+    console.error(t('imageLoadFailed'), error)
   }
 }
 
@@ -320,6 +322,7 @@ const handleError = (event: Event) => {
 
 const handleLoad = async (event: Event) => {
   isLoaded.value = true
+  shouldShowSkeleton.value = false // 图片加载成功，隐藏骨架屏
   emit('load', event)
 
   // 如果青少年模式开启，检测图片内容

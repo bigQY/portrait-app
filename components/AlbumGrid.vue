@@ -17,15 +17,9 @@
         <!-- 相册网格 -->
         <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <div v-for="album in albums" :key="album.id" class="group">
-            <NuxtLink :to="`/album/${album.id}`" class="block" @click.native.prevent="async (e) => {
-              const container = e.currentTarget.closest('.group')
-              if (container) {
-                container.classList.add('fade-out')
-              }
-              navigateTo(`/album/${album.id}`)
-            }">
+            <NuxtLink class="block" @click.prevent="(event) => handleAlbumClick(event, album.id)">
               <ImageCard :src="album.photos?.length > 0 ? album.cover : '/img/cover.jpg'" :title="album.name"
-                :subtitle="`${album.photos?.length || 0} 张照片`" loading="lazy" :cache-key="`cover_${album.name}`"
+                :subtitle="$t('photosUnit', { count: album.photos?.length || 0 })" loading="lazy" :cache-key="`cover_${album.name}`"
                 @load="imageLoaded[album.id] = true" />
             </NuxtLink>
           </div>
@@ -110,6 +104,7 @@
 <script setup>
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 
 const props = defineProps({
   initialPage: {
@@ -172,6 +167,15 @@ watch(showPageInput, (newVal) => {
 const imageLoaded = ref(import.meta.server ? new Proxy({}, {
   get: () => true
 }) : {})
+
+// 处理相册点击事件
+const handleAlbumClick = async (event, albumId) => {
+  const container = event.currentTarget.closest('.group')
+  if (container) {
+    container.classList.add('fade-out')
+  }
+  await navigateTo(localePath({ name: 'album-name', params: { name: albumId } }))
+}
 
 // 获取相册列表数据
 const { data: albumsData, pending } = await useFetch('/api/alist/albums', {

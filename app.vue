@@ -4,10 +4,10 @@
     <div class="min-h-screen">
       <Header />
       <!-- 主体内容 -->
-        <NuxtPage :transition="{
-          name: 'page',
-          mode: 'out-in'
-        }" />
+      <NuxtPage :transition="{
+        name: 'page',
+        mode: 'out-in'
+      }" />
     </div>
   </UApp>
 </template>

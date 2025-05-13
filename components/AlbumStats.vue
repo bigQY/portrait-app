@@ -7,7 +7,7 @@
         <div class="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
       </template>
       <template v-else>
-        <span class="text-gray-600 dark:text-gray-300">{{ views }} 次浏览</span>
+        <span class="text-gray-600 dark:text-gray-300">{{ $t('viewsUnit', { count: views }) }}</span>
       </template>
     </div>
 
@@ -26,7 +26,7 @@
         <div class="w-12 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
       </template>
       <template v-else>
-        <span>{{ likes }} 个赞</span>
+        <span>{{ $t('likesUnit', { count: likes }) }}</span>
       </template>
     </button>
   </div>
@@ -34,13 +34,7 @@
   <!-- 评论区 -->
   <div class="mt-6">
     <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-      评论 
-      <template v-if="isLoading">
-        <span class="inline-block w-8 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
-      </template>
-      <template v-else>
-        ({{ comments.length }})
-      </template>
+      {{ $t('commentsCount', { count: comments.length }) }}
     </h3>
     
     <!-- 评论输入框 -->
@@ -48,19 +42,19 @@
       <!-- 昵称输入 -->
       <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          你的昵称
+          {{ $t('yourNickname') }}
         </label>
         <input
           v-model="nickname"
           type="text"
-          placeholder="游客"
+          :placeholder="$t('guest')"
           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         />
       </div>
       
       <textarea
         v-model="newComment"
-        placeholder="写下你的评论..."
+        :placeholder="$t('writeYourComment')"
         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         rows="3"
       ></textarea>
@@ -73,7 +67,7 @@
           class="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           :disabled="!newComment.trim() || isLoading || !turnstileToken"
         >
-          发表评论
+          {{ $t('publishComment') }}
         </button>
       </div>
     </div>
@@ -123,7 +117,9 @@
 
 <script setup>
 import { getFingerprint } from '~/utils/fingerprint'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const config = useRuntimeConfig()
 const props = defineProps({
   albumName: {
@@ -177,7 +173,7 @@ onMounted(async () => {
 // 获取统计数据
 const fetchStats = async () => {
   if (!props.albumName || props.albumName === '' || props.albumName === 'undefined') {
-    console.error('相册名称无效')
+    console.error(t('albumNameInvalid'))
     return
   }
 
@@ -189,7 +185,7 @@ const fetchStats = async () => {
     likes.value = stats.likes
     comments.value = stats.comments
   } catch (error) {
-    console.error('获取统计数据失败：', error)
+    console.error(t('fetchStatsFailed'), error)
   } finally {
     isLoading.value = false
   }
@@ -215,7 +211,7 @@ const handleLike = async () => {
     likes.value = res.count
     isLiked.value = !isLiked.value
   } catch (error) {
-    console.error('点赞失败：', error)
+    console.error(t('likeFailed'), error)
   } finally {
     isLoading.value = false
   }
@@ -231,7 +227,7 @@ const submitComment = async () => {
       method: 'POST',
       body: {
         content: newComment.value,
-        userName: nickname.value.trim() || '游客',
+        userName: nickname.value.trim() || t('guest'),
         fingerprint: fingerprint.value,
         turnstileToken: turnstileToken.value
       }
@@ -242,7 +238,7 @@ const submitComment = async () => {
     window.turnstile.reset()
     await fetchStats()
   } catch (error) {
-    console.error('提交评论失败：', error)
+    console.error(t('submitCommentFailed'), error)
   } finally {
     isLoading.value = false
   }
@@ -251,7 +247,7 @@ const submitComment = async () => {
 // 删除评论
 const deleteComment = async (id) => {
   if (!id || !fingerprint.value || !props.albumName || props.albumName === '' || props.albumName === 'undefined') {
-    console.error('删除评论失败：缺少必要参数', { id, fingerprint: fingerprint.value, albumName: props.albumName })
+    console.error(t('deleteCommentFailedMissingParams'), { id, fingerprint: fingerprint.value, albumName: props.albumName })
     return
   }
 
@@ -266,11 +262,11 @@ const deleteComment = async (id) => {
       comments.value = comments.value.filter(comment => comment.id !== id)
       await fetchStats()
     } else {
-      throw new Error(response.message || '删除评论失败')
+      throw new Error(response.message || t('deleteCommentFailed'))
     }
   } catch (error) {
-    console.error('删除评论失败：', error)
-    alert(error.message || '删除评论失败，请稍后重试')
+    console.error(t('deleteCommentFailed'), error)
+    alert(error.message || t('deleteCommentFailedTryAgain'))
   } finally {
     isLoading.value = false
   }
@@ -290,12 +286,12 @@ const formatDate = (date) => {
 // 记录浏览量
 const recordView = async () => {
   if (!props.albumName || props.albumName === '' || props.albumName === 'undefined') {
-    console.error('相册名称无效')
+    console.error(t('albumNameInvalid'))
     return
   }
 
   if (!fingerprint.value) {
-    console.error('浏览器指纹无效')
+    console.error(t('browserFingerprintInvalid'))
     return
   }
 
@@ -308,7 +304,7 @@ const recordView = async () => {
     })
     await fetchStats()
   } catch (error) {
-    console.error('记录浏览量失败：', error)
+    console.error(t('recordViewFailed'), error)
   }
 }
 </script>
@@ -317,4 +313,4 @@ const recordView = async () => {
 .cf-turnstile {
   width: 100%;
 }
-</style> 
+</style>
