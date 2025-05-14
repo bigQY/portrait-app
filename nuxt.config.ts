@@ -138,25 +138,31 @@ export default defineNuxtConfig({
         swr: process.env.NODE_ENV === 'production',
         cache: process.env.NODE_ENV === 'production' ? {
           swr: true, // 启用 SWR 缓存
-          maxAge: 12 * 60 * 60 // 360分钟缓存
+          maxAge: 20 * 60 * 60 // 20小时缓存
         } : false
       },
-      '/api/alist/albums': {
+      '/api/alist/**': { // 涵盖所有 /api/alist/ 路径
         cache: process.env.NODE_ENV === 'production' ? {
-          maxAge: 1800,
-          staleMaxAge: 3600
+          maxAge: 20 * 60 * 60, // 20小时缓存
+          staleMaxAge: 20 * 60 * 60 + 3600 // 20小时 + 1小时的staleMaxAge
         } : false
       },
       '/': { 
         ssr: process.env.NODE_ENV === 'production',
         cache: process.env.NODE_ENV === 'production' ? {
-          maxAge: 1800 // 30分钟缓存
+          maxAge: 20 * 60 * 60 // 20小时缓存
         } : false
       },
       '/page/**': {
         ssr: process.env.NODE_ENV === 'production',
         cache: process.env.NODE_ENV === 'production' ? {
-          maxAge: 1800 // 30分钟缓存
+          maxAge: 20 * 60 * 60 // 20小时缓存
+        } : false
+      },
+      '/rankings': { // 为 rankings 页面添加缓存规则
+        ssr: process.env.NODE_ENV === 'production',
+        cache: process.env.NODE_ENV === 'production' ? {
+          maxAge: 20 * 60 * 60 // 20小时缓存
         } : false
       }
     },

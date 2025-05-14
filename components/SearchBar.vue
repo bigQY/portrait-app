@@ -16,7 +16,7 @@
       leave-from-class="transform scale-100 opacity-100"
       leave-to-class="transform scale-95 opacity-0"
     >
-      <div v-if="isSearchOpen" class="absolute right-0 mt-2 w-72 origin-top-right bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border dark:border-gray-700">
+      <div v-if="isSearchOpen" class="absolute mt-2 w-72 left-1/2 -translate-x-1/2 origin-top sm:left-auto sm:right-0 sm:translate-x-0 sm:origin-top-right bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border dark:border-gray-700">
         <UInput
           v-model="searchQuery"
           icon="i-lucide-search"

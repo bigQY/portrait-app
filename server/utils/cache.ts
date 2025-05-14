@@ -45,10 +45,10 @@ class UpstashRedisClient implements CacheDbClient {
     await client.set(key, JSON.stringify(value), { ex: ttl });
   }
 
-  async get<T>(key: string): Promise<T | null> {
+  async get(key: string): Promise<any | null> {
     const client = await this.initClient();
     const value = await client.get(key);
-    return value ? JSON.parse(value as string) : null;
+    return value;
   }
 
   async delete(key: string): Promise<void> {
