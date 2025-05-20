@@ -40,7 +40,7 @@ class UpstashRedisClient implements CacheDbClient {
     return UpstashRedisClient.instance;
   }
 
-  async set(key: string, value: any, ttl: number = 12 * 60 * 60): Promise<void> {
+  async set(key: string, value: any, ttl: number = 2 * 60 * 60): Promise<void> {
     const client = await this.initClient();
     await client.set(key, JSON.stringify(value), { ex: ttl });
   }
@@ -72,7 +72,7 @@ class CloudflareKVClient implements CacheDbClient {
   async set(
     key: string,
     value: any,
-    ttl: number = 12 * 60 * 60
+    ttl: number = 2 * 60 * 60
   ): Promise<void> {
     await global.__env__.CACHE_KV.put(key, JSON.stringify(value), {
       expirationTtl: ttl,
@@ -104,9 +104,9 @@ export class Cache {
   private static instance: Cache;
   private cache: Map<string, CacheItem<any>>;
   // Set default TTL to 12 hours for memory cache
-  private readonly defaultTTL: number = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+  private readonly defaultTTL: number = 2 * 60 * 60 * 1000; // 12 hours in milliseconds
   // Set Cloudflare KV TTL to 12 hours
-  private readonly DbTTL: number = 12 * 60 * 60; // 12 hours in seconds
+  private readonly DbTTL: number = 2 * 60 * 60; // 12 hours in seconds
   private readonly DbClient: CacheDbClient =
     usedKVDBType === KVDBType.upstashRedis
       ? UpstashRedisClient.getInstance()

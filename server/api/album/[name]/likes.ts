@@ -44,10 +44,7 @@ export default defineEventHandler(async (event) => {
       ).bind(albumName, fingerprint).run()
     }
 
-    // 返回最新的点赞数
-    const likes = await db.prepare(
-      'SELECT COUNT(*) as count FROM album_likes WHERE album_name = ?'
-    ).bind(albumName).first()
-    return likes
+    // 返回操作成功状态，而不是最新的点赞数
+    return { success: true }
   }
-}) 
+})

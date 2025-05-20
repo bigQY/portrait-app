@@ -166,7 +166,12 @@ export default defineNuxtConfig({
         } : false
       }
     },
-    minify: process.env.NODE_ENV === 'production'
+    minify: process.env.NODE_ENV === 'production',
+    prerender: {
+      routes: [
+        '/sitemap.xml',
+      ],
+    }
   },
 
   // 开发工具配置

@@ -45,10 +45,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 返回最新的浏览量
-    const views = await db.prepare(
-      'SELECT COUNT(DISTINCT fingerprint) as count FROM album_views WHERE album_name = ? AND created_at > datetime("now", "-10 minutes")'
-    ).bind(albumName).first()
-    return views
+    // 返回操作成功状态，而不是最新的浏览量
+    return { success: true }
   }
-}) 
+})
