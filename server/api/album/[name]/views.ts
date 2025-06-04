@@ -37,15 +37,23 @@ export default defineEventHandler(async (event) => {
 
     if (!existingView) {
       try {
+        // 插入新的浏览记录
         await db.prepare(
           'INSERT INTO album_views (album_name, fingerprint) VALUES (?, ?)'
         ).bind(albumName, fingerprint).run()
+        
+        // 更新总浏览量统计表
+        await db.prepare(
+          'INSERT INTO album_view_counts (album_name, count) VALUES (?, 1) ' +
+          'ON CONFLICT(album_name) DO UPDATE SET count = count + 1'
+        ).bind(albumName).run()
+
       } catch (error) {
         // 如果发生其他错误，忽略
       }
     }
 
-    // 返回操作成功状态，而不是最新的浏览量
+    // 返回操作成功状态
     return { success: true }
   }
 })

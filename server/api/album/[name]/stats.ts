@@ -13,9 +13,9 @@ export default defineEventHandler(async (event) => {
 
   // 只处理GET请求，返回所有统计数据
   if (event.method === 'GET') {
-    const [views, likes, comments] = await Promise.all([
+    const [viewsResult, likes, comments] = await Promise.all([
       db.prepare(
-        'SELECT COUNT(*) as count FROM album_views WHERE album_name = ?'
+        'SELECT count FROM album_view_counts WHERE album_name = ?'
       ).bind(albumName).first(),
       db.prepare(
         'SELECT COUNT(*) as count FROM album_likes WHERE album_name = ?'
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     ])
 
     return {
-      views: views?.count || 0,
+      views: viewsResult?.count || 0,
       likes: likes?.count || 0,
       comments: comments.results || []
     }
@@ -37,4 +37,4 @@ export default defineEventHandler(async (event) => {
     statusCode: 405,
     message: '方法不允许'
   })
-}) 
+})

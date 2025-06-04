@@ -207,8 +207,7 @@ const handleLike = async () => {
         action
       }
     })
-    
-    likes.value = res.count
+    await fetchStats()
     isLiked.value = !isLiked.value
   } catch (error) {
     console.error(t('likeFailed'), error)
@@ -298,11 +297,9 @@ const recordView = async () => {
   try {
     await $fetch(`/api/album/${encodeURIComponent(props.albumName)}/views`, {
       method: 'POST',
-      body: {
-        fingerprint: fingerprint.value
-      }
+      body: { fingerprint: fingerprint.value }
     })
-    await fetchStats()
+    await fetchStats() // Ensure stats are fetched after recording a view
   } catch (error) {
     console.error(t('recordViewFailed'), error)
   }
