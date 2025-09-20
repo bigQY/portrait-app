@@ -19,9 +19,9 @@
           <button 
             @click="toggleTeenMode" 
             class="flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200"
-            :class="isTeenModeEnabled.value ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'"
+            :class="isTeenModeEnabled ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'"
           >
-            <UIcon :name="isTeenModeEnabled.value ? 'i-lucide-shield-check' : 'i-lucide-shield'" class="w-4 h-4" />
+            <UIcon :name="isTeenModeEnabled ? 'i-lucide-shield-check' : 'i-lucide-shield'" class="w-4 h-4" />
             <span class="ml-1 hidden sm:inline">{{ $t('teenMode') }}</span>
           </button>
           <SearchBar v-if="!isAlbumPage.value" />

@@ -84,7 +84,7 @@ const isNSFW = ref(false)
 const isChecking = ref(false)
 const { getCache } = useImageCache()
 const imageCache = getCache()
-const { isTeenModeEnabled, getNSFWModel } = teenMode
+const { isTeenModeEnabled, classifyImage } = teenMode
 const { t } = useI18n()
 
 // 添加状态控制骨架屏显示
@@ -95,69 +95,39 @@ const showSkeleton = computed(() => {
   return shouldShowSkeleton.value && (!isLoaded.value || props.src === '/img/cover.jpg')
 })
 
-interface NSFWPrediction {
-  className: string
-  probability: number
-}
 
-// 检测图片是否适合
+
+// 检测图片是否适合（使用 Worker）
 const checkImageContent = async () => {
   // 确保只在客户端执行
   if (!import.meta.client || !isTeenModeEnabled.value || !imageRef.value || !isLoaded.value) return
 
   try {
     isChecking.value = true
+    isNSFW.value = false // 重置状态
 
     // 生成图片的唯一标识符（使用URL的哈希值）
     const imageUrl = imageRef.value.src
     const imageHash = await generateImageHash(imageUrl)
     const cacheKey = `nsfw_check_${imageHash}`
 
-    // 检查缓存中是否存在结果
-    const cachedResult = localStorage.getItem(cacheKey)
-    if (cachedResult) {
-      const parsedResult = JSON.parse(cachedResult)
-      isNSFW.value = parsedResult.result
-      return
+    // 使用 Worker 进行图片内容检测
+    const result = await classifyImage(imageUrl, cacheKey)
+    
+    if (result.error) {
+      console.error('NSFW检测失败:', result.error)
+      isNSFW.value = false
+    } else {
+      isNSFW.value = result.isNSFW
+      if (result.fromCache) {
+        console.log('从缓存获取NSFW检测结果:', result.isNSFW)
+      } else {
+        console.log('Worker检测结果:', result.isNSFW)
+      }
     }
-
-    const nsfwModel = await getNSFWModel()
-    if (!nsfwModel) return
-
-    // 创建一个新的Image对象用于检测
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve()
-      img.onerror = () => reject(new Error(t('imageLoadFailed')))
-      img.src = imageUrl
-    })
-
-    const predictions = await nsfwModel.classify(img) as NSFWPrediction[]
-    console.log('图片内容检测结果:', predictions)
-
-    // 检查是否包含不适合的内容
-    const pornPrediction = predictions.find((p: NSFWPrediction) => p.className === 'Porn')
-    const sexyPrediction = predictions.find((p: NSFWPrediction) => p.className === 'Sexy')
-
-    const isNSFWResult = Boolean(
-      (pornPrediction && pornPrediction.probability > 0.4) ||
-      (sexyPrediction && sexyPrediction.probability > 0.8)
-    )
-
-    isNSFW.value = isNSFWResult
-
-    // 将结果存入缓存，设置7天过期时间
-    const cacheData = {
-      result: isNSFWResult,
-      timestamp: Date.now(),
-      expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7天后过期
-    }
-    localStorage.setItem(cacheKey, JSON.stringify(cacheData))
 
   } catch (error) {
-    console.error(t('detecting') + 'NSFW检测失败:', error)
+    console.error('NSFW检测失败:', error)
     isNSFW.value = false
   } finally {
     isChecking.value = false
@@ -195,9 +165,10 @@ const cleanupExpiredCache = () => {
 // 监听青少年模式变化
 watch(isTeenModeEnabled, (newValue) => {
   if (newValue && isLoaded.value && import.meta.client) {
-    getNSFWModel().then(() => checkImageContent())
+    checkImageContent()
   } else {
     isNSFW.value = false
+    isChecking.value = false
   }
 }, { immediate: true })
 
@@ -238,9 +209,9 @@ const convertImageToBase64 = (url: string): Promise<string> => {
       }
     }
 
-    img.onerror = (error: Event) => {
+    img.onerror = () => {
       clearTimeout(timeout)
-      reject(new Error(`${t('imageLoadFailed')} ${error instanceof Error ? error.message : t('unknownError')}`))
+      reject(new Error(`${t('imageLoadFailed')} ${t('unknownError')}`))
     }
 
     img.src = url
@@ -296,7 +267,7 @@ onMounted(() => {
 
   if (props.loading === 'lazy' && imageRef.value) {
     const observer = new IntersectionObserver(async (entries) => {
-      if (entries[0].isIntersecting) {
+      if (entries.length > 0 && entries[0]?.isIntersecting) {
         await loadAndCacheImage()
         observer.disconnect()
       }
@@ -325,10 +296,12 @@ const handleLoad = async (event: Event) => {
   shouldShowSkeleton.value = false // 图片加载成功，隐藏骨架屏
   emit('load', event)
 
-  // 如果青少年模式开启，检测图片内容
+  // 如果青少年模式开启，延迟检测图片内容以避免阻塞UI
   if (isTeenModeEnabled.value && import.meta.client) {
-    await getNSFWModel()
-    checkImageContent()
+    // 使用 setTimeout 将检测延迟到下一个事件循环，避免阻塞UI渲染
+    setTimeout(() => {
+      checkImageContent()
+    }, 0)
   }
 }
 
